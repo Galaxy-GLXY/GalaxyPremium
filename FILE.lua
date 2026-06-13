@@ -61,7 +61,7 @@ FlyBtn.MouseButton1Click:Connect(function()
     if hrp then
         for _, part in pairs(LP.Character:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end
         local dist = (hrp.Position - SavedPosition.Position).Magnitude
-        CurrentTween = TS:Create(hrp, TweenInfo.new(dist/200, Enum.EasingStyle.Linear), {CFrame = SavedPosition})
+        CurrentTween = TS:Create(hrp, TweenInfo.new(dist/173, Enum.EasingStyle.Linear), {CFrame = SavedPosition})
         FlyBtn.Text = "DỪNG BAY"
         CurrentTween.Completed:Connect(function() 
             CurrentTween = nil; FlyBtn.Text = "BAY ĐẾN VỊ TRÍ"
