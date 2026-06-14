@@ -5,7 +5,11 @@ local TS = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
 
 -- [BIẾN HỆ THỐNG]
-local G = Instance.new("ScreenGui", LP:WaitForChild("PlayerGui")); G.Name = "GalaxyMini_"..math.random(1000,9999)
+-- Đảm bảo ResetOnSpawn = false để menu không mất khi chết
+local G = Instance.new("ScreenGui", LP:WaitForChild("PlayerGui"))
+G.Name = "GalaxyMini_"..math.random(1000,9999)
+G.ResetOnSpawn = false 
+
 local SavedPosition = nil
 local CurrentTween = nil
 local SpeedVal = 25 
@@ -14,11 +18,10 @@ local function Notify(msg)
     StarterGui:SetCore("SendNotification", {Title = "GALAXY Mini", Text = msg, Duration = 3})
 end
 
--- [GUI THIẾT KẾ - ĐÃ TĂNG KÍCH THƯỚC CHỮ]
+-- [GUI THIẾT KẾ]
 local MainFrame = Instance.new("Frame", G); MainFrame.Size = UDim2.new(0, 200, 0, 220); MainFrame.Position = UDim2.new(0.5, -100, 0.3, 0); MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10); MainFrame.Active = true; MainFrame.Draggable = true
 local Stroke = Instance.new("UIStroke", MainFrame); Stroke.Color = Color3.fromRGB(255, 0, 0); Stroke.Thickness = 2
 
--- Tiêu đề lớn hơn
 local Title = Instance.new("TextLabel", MainFrame); Title.Size = UDim2.new(1, 0, 0, 40); Title.Text = "GALAXY Mini"; Title.TextColor3 = Color3.fromRGB(255,0,0); Title.BackgroundTransparency = 1; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20
 local CloseBtn = Instance.new("TextButton", MainFrame); CloseBtn.Size = UDim2.new(0, 40, 0, 40); CloseBtn.Position = UDim2.new(1, -40, 0, 0); CloseBtn.Text = "X"; CloseBtn.TextColor3 = Color3.fromRGB(255,0,0); CloseBtn.BackgroundColor3 = Color3.fromRGB(30,0,0); CloseBtn.Font = Enum.Font.SourceSansBold; CloseBtn.TextSize = 20
 CloseBtn.MouseButton1Click:Connect(function() G:Destroy() end)
@@ -32,7 +35,6 @@ end
 local SaveBtn = CreateBtn("LƯU VỊ TRÍ", 50)
 local FlyBtn = CreateBtn("BAY ĐẾN VỊ TRÍ", 100)
 
--- [Ô NHẬP TỐC ĐỘ LỚN HƠN]
 local SpeedInput = Instance.new("TextBox", MainFrame)
 SpeedInput.Size = UDim2.new(1, -20, 0, 45); SpeedInput.Position = UDim2.new(0, 10, 0, 155)
 SpeedInput.BackgroundColor3 = Color3.fromRGB(20, 20, 20); SpeedInput.PlaceholderText = "Nhập tốc độ..."; SpeedInput.Text = tostring(SpeedVal)
@@ -71,13 +73,17 @@ FlyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- [SPEED BYPASS LUÔN CHẠY]
+-- Sử dụng pcall để tránh lỗi khi nhân vật chưa hồi sinh xong
 RS.Heartbeat:Connect(function()
-    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        local hum = LP.Character.Humanoid
-        local hrp = LP.Character.HumanoidRootPart
-        hum.WalkSpeed = 16
-        if hum.MoveDirection.Magnitude > 0 then
-            hrp.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * SpeedVal, hrp.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * SpeedVal)
+    pcall(function()
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") and LP.Character:FindFirstChild("HumanoidRootPart") then
+            local hum = LP.Character.Humanoid
+            local hrp = LP.Character.HumanoidRootPart
+            hum.WalkSpeed = 16
+            if hum.MoveDirection.Magnitude > 0 then
+                hrp.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * SpeedVal, hrp.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * SpeedVal)
+            end
         end
-    end
+    end)
 end)
