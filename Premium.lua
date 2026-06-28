@@ -4,16 +4,15 @@ local RS = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 
 -- [BIẾN HỆ THỐNG]
--- Tạo ScreenGui trực tiếp trong PlayerGui và tắt ResetOnSpawn để không bị mất khi reset nhân vật
 local PlayerGui = LP:WaitForChild("PlayerGui")
 local G = Instance.new("ScreenGui")
 G.Name = "GalaxyMini_"..math.random(1000,9999)
-G.ResetOnSpawn = false -- Giữ giao diện khi chết hoặc hồi sinh
+G.ResetOnSpawn = false 
 G.Parent = PlayerGui
 
 local SavedPosition = nil
-local LoopTPConnection = nil -- Biến quản lý vòng lặp dịch chuyển
-local LoopSpeedConnection = nil -- Biến quản lý vòng lặp tốc độ
+local LoopTPActive = false 
+local LoopSpeedConnection = nil 
 local SpeedVal = 25 
 
 local function Notify(msg)
@@ -27,10 +26,16 @@ local Stroke = Instance.new("UIStroke", MainFrame); Stroke.Color = Color3.fromRG
 local Title = Instance.new("TextLabel", MainFrame); Title.Size = UDim2.new(1, 0, 0, 40); Title.Text = "GALAXY Mini"; Title.TextColor3 = Color3.fromRGB(255,0,0); Title.BackgroundTransparency = 1; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20
 local CloseBtn = Instance.new("TextButton", MainFrame); CloseBtn.Size = UDim2.new(0, 40, 0, 40); CloseBtn.Position = UDim2.new(1, -40, 0, 0); CloseBtn.Text = "X"; CloseBtn.TextColor3 = Color3.fromRGB(255,0,0); CloseBtn.BackgroundColor3 = Color3.fromRGB(30,0,0); CloseBtn.Font = Enum.Font.SourceSansBold; CloseBtn.TextSize = 20
 
--- Khi nhấn nút X: Tắt tất cả Loop trước khi xóa GUI
 CloseBtn.MouseButton1Click:Connect(function() 
-    if LoopTPConnection then LoopTPConnection:Disconnect(); LoopTPConnection = nil end
+    LoopTPActive = false
     if LoopSpeedConnection then LoopSpeedConnection:Disconnect(); LoopSpeedConnection = nil end
+    
+    pcall(function()
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            LP.Character.Humanoid.WalkSpeed = 16
+        end
+    end)
+    
     G:Destroy() 
 end)
 
@@ -57,7 +62,7 @@ SpeedInput.FocusLost:Connect(function(enterPressed)
     end
 end)
 
--- [CHỨC NĂNG]
+-- [CHỨC NĂNG - LƯU VỊ TRÍ]
 SaveBtn.MouseButton1Click:Connect(function()
     if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
         SavedPosition = LP.Character.HumanoidRootPart.CFrame
@@ -65,18 +70,12 @@ SaveBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- [CHỨC NĂNG - LOOP TELEPORT]
 FlyBtn.MouseButton1Click:Connect(function()
-    if LoopTPConnection then 
-        LoopTPConnection:Disconnect()
-        LoopTPConnection = nil
+    if LoopTPActive then 
+        LoopTPActive = false
         FlyBtn.Text = "TP"
         FlyBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
-        
-        if LP.Character then
-            for _, part in pairs(LP.Character:GetDescendants()) do 
-                if part:IsA("BasePart") then part.CanCollide = true end 
-            end
-        end
         return 
     end
     
@@ -84,31 +83,37 @@ FlyBtn.MouseButton1Click:Connect(function()
     
     local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
     if hrp then
+        LoopTPActive = true
         FlyBtn.Text = "DỪNG TP"
         FlyBtn.TextColor3 = Color3.fromRGB(0, 255, 0)
         
-        for _, part in pairs(LP.Character:GetDescendants()) do 
-            if part:IsA("BasePart") then part.CanCollide = false end 
-        end
-        
-        LoopTPConnection = RS.Heartbeat:Connect(function()
-            local currentHrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-            if currentHrp and SavedPosition then
-                currentHrp.CFrame = SavedPosition
-                currentHrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        task.spawn(function()
+            while LoopTPActive do
+                task.wait()
+                pcall(function()
+                    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and SavedPosition then
+                        -- Tắt va chạm liên tục TRONG vòng lặp để tránh bị kẹt hình, không ép cứng trạng thái CanCollide gốc khi dừng
+                        for _, part in pairs(LP.Character:GetDescendants()) do 
+                            if part:IsA("BasePart") then part.CanCollide = false end 
+                        end
+                        LP.Character.HumanoidRootPart.CFrame = SavedPosition
+                    end
+                end)
             end
         end)
     end
 end)
 
--- Quản lý chức năng Speed thông qua biến LoopSpeedConnection để dễ dàng tắt hẳn khi đóng Menu
+-- [CHỨC NĂNG - LOOP SPEED]
 LoopSpeedConnection = RS.Heartbeat:Connect(function()
-    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        local hum = LP.Character.Humanoid
-        local hrp = LP.Character.HumanoidRootPart
-        hum.WalkSpeed = 16
-        if hum.MoveDirection.Magnitude > 0 then
-            hrp.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * SpeedVal, hrp.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * SpeedVal)
+    pcall(function()
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            local hum = LP.Character.Humanoid
+            local hrp = LP.Character.HumanoidRootPart
+            hum.WalkSpeed = 16
+            if hum.MoveDirection.Magnitude > 0 then
+                hrp.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * SpeedVal, hrp.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * SpeedVal)
+            end
         end
-    end
+    end)
 end)
