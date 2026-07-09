@@ -1,9 +1,3 @@
---[[ 
-    GALAXY PREMIUM v5.4.2 - FIXED SPEED DISPLAY
-    - FIX: Hiển thị tốc độ ngay sau khi nhập.
-    - FIX: Ép xung WalkSpeed trong Heartbeat để đảm bảo tốc độ chạy ổn định.
-]]
-
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 local RS = game:GetService("RunService")
