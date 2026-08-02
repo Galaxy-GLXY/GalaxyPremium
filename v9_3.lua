@@ -12,7 +12,6 @@ local function ApplyFFlags()
     Lighting.GlobalShadows = false
     Lighting.Brightness = 0.5
     Lighting.OutdoorAmbient = Color3.fromRGB(100, 100, 100)
-    Lighting.ClockTime = 0
     Lighting.ExposureCompensation = -0.5
     Lighting.FogEnd = 9e9
     local function Optimize(obj)
