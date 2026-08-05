@@ -96,7 +96,7 @@ local Main = Instance.new("Frame", G); Main.Visible = false; Main.Size = UDim2.n
 local SubMenu = Instance.new("Frame", G); SubMenu.Visible = false; SubMenu.Size = UDim2.new(0, 200, 0, 260); SubMenu.Position = UDim2.new(0.5, 10, 0.3, 0); SubMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15); SubMenu.Active = true; SubMenu.Draggable = true; Instance.new("UIStroke", SubMenu).Color = NeonRed
 
 local function CreateTitle(p, txt)
-    local T = Instance.new("TextLabel", p); T.Size = UDim2.new(1, 0, 0, 70); T.BackgroundColor3 = NeonRed; T.Text = txt; T.TextColor3 = Color3.new(1,1,1); T.Font = Enum.Font.SourceSansBold; T.TextSize = 16
+    local T = Instance.new("TextLabel", p); T.Size = UDim2.new(1, 0, 0, 40); T.BackgroundColor3 = NeonRed; T.Text = txt; T.TextColor3 = Color3.new(1,1,1); T.Font = Enum.Font.SourceSansBold; T.TextSize = 16
 end
 CreateTitle(Main, "GALAXY Premium")
 CreateTitle(SubMenu, "PLAYER TOOL")
