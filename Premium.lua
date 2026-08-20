@@ -15,8 +15,25 @@ local LoopTPActive = false
 local LoopSpeedConnection = nil 
 local SpeedVal = 25 
 
+-- [ANTI-KICK CƠ BẢN (Bypass Local Script Kick)]
+local rawMetatable = getrawmetatable or debug.getmetatable
+if rawMetatable then
+    setreadonly(rawMetatable(game), false)
+    local oldNamecall = rawMetatable(game).__namecall
+    rawMetatable(game).__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        if method == "Kick" or method == "kick" then
+            return nil -- Chặn gọi hàm Kick từ Client
+        end
+        return oldNamecall(self, ...)
+    end)
+    setreadonly(rawMetatable(game), true)
+end
+
 local function Notify(msg)
-    StarterGui:SetCore("SendNotification", {Title = "GALAXY Mini", Text = msg, Duration = 3})
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {Title = "GALAXY Mini", Text = msg, Duration = 3})
+    end)
 end
 
 -- [GUI THIẾT KẾ]
@@ -29,13 +46,6 @@ local CloseBtn = Instance.new("TextButton", MainFrame); CloseBtn.Size = UDim2.ne
 CloseBtn.MouseButton1Click:Connect(function() 
     LoopTPActive = false
     if LoopSpeedConnection then LoopSpeedConnection:Disconnect(); LoopSpeedConnection = nil end
-    
-    pcall(function()
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            LP.Character.Humanoid.WalkSpeed = 16
-        end
-    end)
-    
     G:Destroy() 
 end)
 
@@ -70,12 +80,19 @@ SaveBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- [CHỨC NĂNG - LOOP TELEPORT]
+-- [CHỨC NĂNG - LOOP TELEPORT (CHỐNG RESET)]
 FlyBtn.MouseButton1Click:Connect(function()
     if LoopTPActive then 
         LoopTPActive = false
         FlyBtn.Text = "TP"
         FlyBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
+        
+        -- Bật lại CanCollide và Vận tốc khi Dừng TP
+        if LP.Character then
+            for _, part in ipairs(LP.Character:GetDescendants()) do 
+                if part:IsA("BasePart") then part.CanCollide = true end 
+            end
+        end
         return 
     end
     
@@ -89,14 +106,22 @@ FlyBtn.MouseButton1Click:Connect(function()
         
         task.spawn(function()
             while LoopTPActive do
-                task.wait()
+                RS.Heartbeat:Wait() -- Dùng Heartbeat để khớp đồng bộ khung hình vật lý
                 pcall(function()
-                    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and SavedPosition then
-                        -- Tắt va chạm liên tục TRONG vòng lặp để tránh bị kẹt hình, không ép cứng trạng thái CanCollide gốc khi dừng
-                        for _, part in pairs(LP.Character:GetDescendants()) do 
-                            if part:IsA("BasePart") then part.CanCollide = false end 
+                    local char = LP.Character
+                    if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and SavedPosition then
+                        local root = char.HumanoidRootPart
+                        local hum = char.Humanoid
+                        
+                        -- Chống chết khi đang Loop TP
+                        if hum.Health > 0 then
+                            -- Triệt tiêu trọng lực/vận tốc thừa để không bị bay văng hoặc kẹt map
+                            root.AssemblyLinearVelocity = Vector3.zero
+                            root.AssemblyAngularVelocity = Vector3.zero
+                            
+                            -- Giữ cho nhân vật ở điểm chỉ định mà không tắt hoàn toàn CanCollide của thân trên
+                            root.CFrame = SavedPosition
                         end
-                        LP.Character.HumanoidRootPart.CFrame = SavedPosition
                     end
                 end)
             end
@@ -107,12 +132,15 @@ end)
 -- [CHỨC NĂNG - LOOP SPEED]
 LoopSpeedConnection = RS.Heartbeat:Connect(function()
     pcall(function()
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") and LP.Character:FindFirstChild("HumanoidRootPart") then
             local hum = LP.Character.Humanoid
             local hrp = LP.Character.HumanoidRootPart
-            hum.WalkSpeed = 16
-            if hum.MoveDirection.Magnitude > 0 then
-                hrp.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * SpeedVal, hrp.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * SpeedVal)
+            
+            if hum.Health > 0 and hum.MoveDirection.Magnitude > 0 then
+                -- Tính toán di chuyển mượt mà mà không làm hỏng Y (nhảy)
+                local currentY = hrp.AssemblyLinearVelocity.Y
+                local moveDir = hum.MoveDirection * SpeedVal
+                hrp.AssemblyLinearVelocity = Vector3.new(moveDir.X, currentY, moveDir.Z)
             end
         end
     end)
