@@ -68,7 +68,16 @@ Instance.new("UIStroke", SpeedInput).Color = Color3.fromRGB(150,0,0)
 SpeedInput.FocusLost:Connect(function(enterPressed)
     if enterPressed then
         local val = tonumber(SpeedInput.Text)
-        if val then SpeedVal = val; Notify("Tốc độ mới: " .. val) else SpeedInput.Text = tostring(SpeedVal) end
+        if val then 
+            SpeedVal = val
+            if SpeedVal <= 0 then
+                Notify("Đã tắt Loop Speed (Dùng tốc độ gốc)")
+            else
+                Notify("Tốc độ mới: " .. val)
+            end
+        else 
+            SpeedInput.Text = tostring(SpeedVal) 
+        end
     end
 end)
 
@@ -87,7 +96,7 @@ FlyBtn.MouseButton1Click:Connect(function()
         FlyBtn.Text = "TP"
         FlyBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
         
-        -- Bật lại CanCollide và Vận tốc khi Dừng TP
+        -- Bật lại CanCollide khi Dừng TP
         if LP.Character then
             for _, part in ipairs(LP.Character:GetDescendants()) do 
                 if part:IsA("BasePart") then part.CanCollide = true end 
@@ -106,20 +115,16 @@ FlyBtn.MouseButton1Click:Connect(function()
         
         task.spawn(function()
             while LoopTPActive do
-                RS.Heartbeat:Wait() -- Dùng Heartbeat để khớp đồng bộ khung hình vật lý
+                RS.Heartbeat:Wait()
                 pcall(function()
                     local char = LP.Character
                     if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") and SavedPosition then
                         local root = char.HumanoidRootPart
                         local hum = char.Humanoid
                         
-                        -- Chống chết khi đang Loop TP
                         if hum.Health > 0 then
-                            -- Triệt tiêu trọng lực/vận tốc thừa để không bị bay văng hoặc kẹt map
                             root.AssemblyLinearVelocity = Vector3.zero
                             root.AssemblyAngularVelocity = Vector3.zero
-                            
-                            -- Giữ cho nhân vật ở điểm chỉ định mà không tắt hoàn toàn CanCollide của thân trên
                             root.CFrame = SavedPosition
                         end
                     end
@@ -129,18 +134,20 @@ FlyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- [CHỨC NĂNG - LOOP SPEED]
+-- [CHỨC NĂNG - LOOP SPEED (CÓ ĐIỀU KIỆN 0)]
 LoopSpeedConnection = RS.Heartbeat:Connect(function()
     pcall(function()
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") and LP.Character:FindFirstChild("HumanoidRootPart") then
-            local hum = LP.Character.Humanoid
-            local hrp = LP.Character.HumanoidRootPart
-            
-            if hum.Health > 0 and hum.MoveDirection.Magnitude > 0 then
-                -- Tính toán di chuyển mượt mà mà không làm hỏng Y (nhảy)
-                local currentY = hrp.AssemblyLinearVelocity.Y
-                local moveDir = hum.MoveDirection * SpeedVal
-                hrp.AssemblyLinearVelocity = Vector3.new(moveDir.X, currentY, moveDir.Z)
+        -- Kiểm tra nếu SpeedVal > 0 mới can thiệp tốc độ
+        if SpeedVal > 0 then
+            if LP.Character and LP.Character:FindFirstChild("Humanoid") and LP.Character:FindFirstChild("HumanoidRootPart") then
+                local hum = LP.Character.Humanoid
+                local hrp = LP.Character.HumanoidRootPart
+                
+                if hum.Health > 0 and hum.MoveDirection.Magnitude > 0 then
+                    local currentY = hrp.AssemblyLinearVelocity.Y
+                    local moveDir = hum.MoveDirection * SpeedVal
+                    hrp.AssemblyLinearVelocity = Vector3.new(moveDir.X, currentY, moveDir.Z)
+                end
             end
         end
     end)
