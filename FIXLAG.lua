@@ -1,40 +1,69 @@
-local Lighting = game:GetService("Lighting")
-local workspace = game:GetService("Workspace")
+-- [GALAXY FFLAG - SMOOTH PLASTIC & NO TEXTURE / LOW POLY]
 
-local function ApplyOptimization()
-    -- Thiết lập môi trường tối giản
-    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-    Lighting.GlobalShadows = false
-    Lighting.Brightness = 0.5
-    Lighting.OutdoorAmbient = Color3.fromRGB(100, 100, 100)
-    Lighting.ClockTime = 0
-    Lighting.ExposureCompensation = -0.5
-    Lighting.FogEnd = 9e9
-    
-    -- Hàm tối ưu hóa vật thể
-    local function Optimize(obj)
-        if obj:IsA("BasePart") or obj:IsA("MeshPart") then
-            obj.Material = Enum.Material.SmoothPlastic -- Chuyển về nhựa trơn để giảm tải GPU
-            obj.CastShadow = false -- Tắt đổ bóng từng vật thể
-            if obj.Name:lower():find("effect") or obj.Parent.Name:lower():find("fx") then
-                obj.Transparency = 0.7
-            end
-        end
-        if obj:IsA("Decal") or obj:IsA("Texture") then obj:Destroy() end -- Xóa họa tiết thừa
-        if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Explosion") then
-            obj.Enabled = false -- Tắt hiệu ứng hạt gây lag
-        end
+-- 1. CẤU HÌNH FFLAG ÉP ENGINE XÓA HOA VĂN / CHI TIẾT MẪU (TEXTURE MIPS)
+pcall(function()
+    if setfflag then
+        setfflag("FIntDebugTextureManagerSkipMips", "8") -- Bỏ sạch chất liệu hoa văn, ép bề mặt phẳng lì
+        setfflag("FFlagDebugDisableMaterials", "True")      -- Tắt toàn bộ chất liệu chi tiết gốc
+        setfflag("FIntRenderMeshLODQuality", "0")          -- Ép hình khối về dạng phẳng đơn giản nhất
+        setfflag("FFlagDebugDisableShadows", "True")       -- Tắt bóng đổ
+        setfflag("FFlagEnableGlobalShadows", "False")
     end
+end)
 
-    -- Chạy cho các vật thể hiện có
-    for _, v in pairs(workspace:GetDescendants()) do 
-        Optimize(v) 
-    end
-    
-    -- Tự động tối ưu khi vật thể mới xuất hiện
-    workspace.DescendantAdded:Connect(Optimize)
-    
-    print("Optimization Applied: Graphics Minimalist Mode")
+-- 2. BIẾN TOÀN BỘ VẬT THỂ THÀNH KHỐI PHẲNG (SMOOTH PLASTIC) & XÓA CHI TIẾT
+local function MakeObjectSmooth(obj)
+    pcall(function()
+        -- Nếu là khối (Part/MeshPart), ép về chất liệu SmoothPlastic (Nhựa trơn phẳng lì)
+        if obj:IsA("BasePart") then
+            obj.Material = Enum.Material.SmoothPlastic
+            obj.Reflectance = 0 -- Bỏ độ phản chiếu gây lóa
+        end
+        
+        -- Xóa bỏ các tấm hình dán/hoa văn bề mặt (Decal, Texture, SurfaceAppearance)
+        if obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("SurfaceAppearance") then
+            obj:Destroy()
+        end
+        
+        -- Nếu là cỏ tự nhiên của game, tắt chiều cao để phẳng xuống mặt đất
+        if obj:IsA("Terrain") then
+            obj.WaterWaveSize = 0
+            obj.WaterWaveSpeed = 0
+            obj.WaterReflectance = 0
+            obj.WaterTransparency = 1
+        end
+    end)
 end
 
-ApplyOptimization()
+-- Quét toàn bộ bản đồ hiện tại
+for _, item in pairs(workspace:GetDescendants()) do
+    MakeObjectSmooth(item)
+end
+
+-- Quét tự động cho các khối/vật thể mới sinh ra trong lúc chơi
+workspace.DescendantAdded:Connect(function(newItem)
+    task.wait(0.1)
+    MakeObjectSmooth(newItem)
+end)
+
+-- 3. GIẢM BỚT ĐỘ SÁNG CHÓI CỦA ĐÈN / CHIẾU SÁNG
+pcall(function()
+    local lighting = game:GetService("Lighting")
+    lighting.GlobalShadows = false
+    
+    -- Xóa các hiệu ứng lóa sáng, sương mù
+    for _, v in pairs(lighting:GetChildren()) do
+        if v:IsA("PostEffect") or v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") then
+            v.Enabled = false
+        end
+    end
+end)
+
+-- Thông báo hoàn thành
+pcall(function()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "GALAXY FFlag",
+        Text = "Đã chuyển toàn bộ khối thành phẳng trơn (Smooth Plastic)!",
+        Duration = 3
+    })
+end)
