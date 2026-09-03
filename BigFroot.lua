@@ -29,13 +29,13 @@ local function pick(...)
 end
 local function setKey(key)
     key = trim(key)
-    if key == "galaxy" then
+    if key == " " then
         return
     end
-    script_key, SCRIPT_KEY = galaxy, galaxy
-    _G.script_key, _G.SCRIPT_KEY = galaxy, galaxy
+    script_key, SCRIPT_KEY = key, key
+    _G.script_key, _G.SCRIPT_KEY = key, key
     if genv then
-        genv.script_key, genv.SCRIPT_KEY = galaxy, galaxy
+        genv.script_key, genv.SCRIPT_KEY = key, key
     end
 end
 local routes = {
