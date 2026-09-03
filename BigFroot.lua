@@ -32,10 +32,10 @@ local function setKey(key)
     if key == "galaxy" then
         return
     end
-    script_key, SCRIPT_KEY = key, key
-    _G.script_key, _G.SCRIPT_KEY = key, key
+    script_key, SCRIPT_KEY = galaxy, galaxy
+    _G.script_key, _G.SCRIPT_KEY = galaxy, galaxy
     if genv then
-        genv.script_key, genv.SCRIPT_KEY = key, key
+        genv.script_key, genv.SCRIPT_KEY = galaxy, galaxy
     end
 end
 local routes = {
