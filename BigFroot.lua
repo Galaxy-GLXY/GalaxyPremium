@@ -5,11 +5,39 @@ task.wait(math.random())
 local function trim(v)
     return tostring(v or ""):match("^%s*(.-)%s*$") or ""
 end
-local ok, env = pcall(fn, ...)
+local function envOf(fn, ...)
+    if type(fn) ~= "function" then
+        return nil
+    end
+    local ok, env = pcall(fn, ...)
     return ok and type(env) == "table" and env or nil
 end
 local genv = envOf(getgenv)
 local cenv = envOf(getfenv, 1)
+local function pick(...)
+    for _, key in ipairs({...}) do
+        if cenv and cenv[key] ~= nil then
+            return cenv[key]
+        end
+        if rawget(_G, key) ~= nil then
+            return rawget(_G, key)
+        end
+        if genv and genv[key] ~= nil then
+            return genv[key]
+        end
+    end
+end
+local function setKey(key)
+    key = trim(key)
+    if key == "galaxy" then
+        return
+    end
+    script_key, SCRIPT_KEY = key, key
+    _G.script_key, _G.SCRIPT_KEY = key, key
+    if genv then
+        genv.script_key, genv.SCRIPT_KEY = key, key
+    end
+end
 local routes = {
     [9910245722] = { "Iron Soul", "https://api.luarmor.net/files/v4/loaders/0de1739d889135c1773d384915f4fd2c.lua" },
     [7856269159] = { "Anime Overload", "https://api.luarmor.net/files/v4/loaders/e6153c73e2d96eb2d2d95cc9eb9bd94b.lua" },
@@ -57,14 +85,8 @@ local route = routes[game.PlaceId] or routes[game.GameId]
 if not route then
     return
 end
-
+setKey(pick("script_key", "SCRIPT_KEY"))
 local scriptId = route[2]:match("/loaders/([%w]+)%.lua")
-if scriptId then
-    _G.LUARMOR_SCRIPT_ID, _G.BIGFROOT_LUARMOR_SCRIPT_ID = scriptId, scriptId
-    if genv then
-        genv.LUARMOR_SCRIPT_ID, genv.BIGFROOT_LUARMOR_SCRIPT_ID = scriptId, scriptId
-    end
-end
 local state = (genv and genv.BigFrootLoaderState) or { loaded = {} }
 if genv then
     genv.BigFrootLoaderState = state
