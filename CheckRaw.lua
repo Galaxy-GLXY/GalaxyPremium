@@ -1,8 +1,10 @@
 local parent = gethui and gethui() or game:GetService("CoreGui")
 
+-- Xóa các bảng cũ nếu đã chạy trước đó
 if parent:FindFirstChild("RawScriptCheckerInput") then parent.RawScriptCheckerInput:Destroy() end
 if parent:FindFirstChild("RawScriptViewer") then parent.RawScriptViewer:Destroy() end
 
+-- BẢNG BƯỚC 1: KHUNG NHẬP DÁN LOADSTRING
 local inputGui = Instance.new("ScreenGui")
 inputGui.Name = "RawScriptCheckerInput"
 inputGui.ResetOnSpawn = false
@@ -40,7 +42,7 @@ inputClose.Font = Enum.Font.Code
 inputClose.TextSize = 18
 inputClose.MouseButton1Click:Connect(function() inputGui:Destroy() end)
 
-local inputBox = Instance.new("", inputFrame)
+local inputBox = Instance.new("TextBox", inputFrame)
 inputBox.Size = UDim2.new(1, -24, 0, 120)
 inputBox.Position = UDim2.new(0, 12, 0, 40)
 inputBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
@@ -81,10 +83,13 @@ checkBtn.MouseButton1Click:Connect(function()
 		return
 	end
 
+	-- Xóa bảng nhập
 	inputGui:Destroy()
 
+	-- BẮT ĐẦU CHẠY ĐÚNG ĐOẠN MA CỦA BẠN VỚI LINK VỪA LẤY ĐƯỢC
 	local url = extractedUrl
 
+	-- Chỉ tải source, KHÔNG loadstring / chạy source
 	local success, raw = pcall(function()
 		return game:HttpGet(url)
 	end)
@@ -93,6 +98,7 @@ checkBtn.MouseButton1Click:Connect(function()
 		raw = "Không thể tải raw source:\n" .. tostring(raw)
 	end
 
+	-- Xóa bảng cũ nếu đã chạy trước đó
 	local oldGui = parent:FindFirstChild("RawScriptViewer")
 	if oldGui then
 		oldGui:Destroy()
@@ -122,12 +128,13 @@ checkBtn.MouseButton1Click:Connect(function()
 	title.Size = UDim2.new(1, -120, 0, 38)
 	title.Position = UDim2.new(0, 12, 0, 0)
 	title.BackgroundTransparency = 1
-	title.Text = "RAW SCRIPT EDITOR  |  Cho phép chỉnh sửa / copy"
+	title.Text = "RAW SCRIPT EDITOR  "
 	title.TextColor3 = Color3.fromRGB(255, 255, 255)
 	title.Font = Enum.Font.Code
 	title.TextSize = 14
 	title.TextXAlignment = Enum.TextXAlignment.Left
 
+	-- Nút Bật/Tắt Tự động xuống dòng (TextWrapped)
 	local wrapBtn = Instance.new("TextButton")
 	wrapBtn.Parent = frame
 	wrapBtn.Size = UDim2.new(0, 60, 0, 26)
@@ -173,7 +180,7 @@ checkBtn.MouseButton1Click:Connect(function()
 	source.BackgroundTransparency = 1
 	source.ClearTextOnFocus = false
 	source.MultiLine = true
-	source.TextEditable = true
+	source.TextEditable = true -- Đã cho phép gõ / xóa / sửa chữ trực tiếp
 	source.Text = raw
 	source.TextColor3 = Color3.fromRGB(230, 230, 230)
 	source.Font = Enum.Font.Code
@@ -181,6 +188,8 @@ checkBtn.MouseButton1Click:Connect(function()
 	source.TextXAlignment = Enum.TextXAlignment.Left
 	source.TextYAlignment = Enum.TextYAlignment.Top
 	source.TextWrapped = false
+
+	-- Sự kiện nhấn nút WRAP để đổi chế độ ngắt dòng
 	local isWrapped = false
 	wrapBtn.MouseButton1Click:Connect(function()
 		isWrapped = not isWrapped
