@@ -138,7 +138,7 @@ FlyToPosBtn.MouseButton1Click:Connect(function()
 
         -- Tốc độ bay cố định cực nhanh (300 studs/s)
         local distance = (hrp.Position - TargetPosition.Position).Magnitude
-        local flySpeed = 300 
+        local flySpeed = 1000 
         local duration = math.max(distance / flySpeed, 0.1)
 
         -- Chuyển trạng thái Physics để không bị Server giật lại khi bay nhanh
