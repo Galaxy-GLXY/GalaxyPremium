@@ -1,10 +1,8 @@
 local parent = gethui and gethui() or game:GetService("CoreGui")
 
--- Xóa các bảng cũ nếu đã chạy trước đó
 if parent:FindFirstChild("RawScriptCheckerInput") then parent.RawScriptCheckerInput:Destroy() end
 if parent:FindFirstChild("RawScriptViewer") then parent.RawScriptViewer:Destroy() end
 
--- BẢNG BƯỚC 1: KHUNG NHẬP DÁN LOADSTRING
 local inputGui = Instance.new("ScreenGui")
 inputGui.Name = "RawScriptCheckerInput"
 inputGui.ResetOnSpawn = false
@@ -26,7 +24,7 @@ local inputTitle = Instance.new("TextLabel", inputFrame)
 inputTitle.Size = UDim2.new(1, -50, 0, 35)
 inputTitle.Position = UDim2.new(0, 12, 0, 0)
 inputTitle.BackgroundTransparency = 1
-inputTitle.Text = "NHẬP LOADSTRING ĐỂ CHECK RAW"
+inputTitle.Text = "RAW SCRIPT CHECKER"
 inputTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 inputTitle.Font = Enum.Font.Code
 inputTitle.TextSize = 13
@@ -47,7 +45,8 @@ inputBox.Size = UDim2.new(1, -24, 0, 120)
 inputBox.Position = UDim2.new(0, 12, 0, 40)
 inputBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 inputBox.TextColor3 = Color3.fromRGB(230, 230, 230)
-inputBox.PlaceholderText = 'Dán loadstring(game:HttpGet("https://..."))() vào đây...'
+inputBox.Text = ""
+inputBox.PlaceholderText = 'Paste loadstring or URL here...'
 inputBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 inputBox.Font = Enum.Font.Code
 inputBox.TextSize = 13
@@ -68,14 +67,12 @@ checkBtn.Font = Enum.Font.Code
 checkBtn.TextSize = 14
 Instance.new("UICorner", checkBtn).CornerRadius = UDim.new(0, 6)
 
--- XỬ LÝ KHI BẤM NÚT CHECK
 checkBtn.MouseButton1Click:Connect(function()
 	local input = inputBox.Text
-	-- Tách link nằm trong " " hoặc ' ' hoặc lấy nguyên đường dẫn HTTP
 	local extractedUrl = input:match('"([^"]+)"') or input:match("'([^']+)'") or input:match("https?://%S+")
 	
 	if not extractedUrl then
-		checkBtn.Text = "KHÔNG TÌM THẤY LINK HỢP LỆ!"
+		checkBtn.Text = "INVALID URL!"
 		checkBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 		task.wait(1.5)
 		checkBtn.Text = "CHECK RAW"
@@ -83,22 +80,17 @@ checkBtn.MouseButton1Click:Connect(function()
 		return
 	end
 
-	-- Xóa bảng nhập
 	inputGui:Destroy()
 
-	-- BẮT ĐẦU CHẠY ĐÚNG ĐOẠN MA CỦA BẠN VỚI LINK VỪA LẤY ĐƯỢC
 	local url = extractedUrl
-
-	-- Chỉ tải source, KHÔNG loadstring / chạy source
 	local success, raw = pcall(function()
 		return game:HttpGet(url)
 	end)
 
 	if not success then
-		raw = "Không thể tải raw source:\n" .. tostring(raw)
+		raw = "Error fetching source:\n" .. tostring(raw)
 	end
 
-	-- Xóa bảng cũ nếu đã chạy trước đó
 	local oldGui = parent:FindFirstChild("RawScriptViewer")
 	if oldGui then
 		oldGui:Destroy()
@@ -128,13 +120,12 @@ checkBtn.MouseButton1Click:Connect(function()
 	title.Size = UDim2.new(1, -120, 0, 38)
 	title.Position = UDim2.new(0, 12, 0, 0)
 	title.BackgroundTransparency = 1
-	title.Text = "RAW SCRIPT EDITOR  "
+	title.Text = "RAW SCRIPT EDITOR"
 	title.TextColor3 = Color3.fromRGB(255, 255, 255)
 	title.Font = Enum.Font.Code
 	title.TextSize = 14
 	title.TextXAlignment = Enum.TextXAlignment.Left
 
-	-- Nút Bật/Tắt Tự động xuống dòng (TextWrapped)
 	local wrapBtn = Instance.new("TextButton")
 	wrapBtn.Parent = frame
 	wrapBtn.Size = UDim2.new(0, 60, 0, 26)
@@ -180,7 +171,7 @@ checkBtn.MouseButton1Click:Connect(function()
 	source.BackgroundTransparency = 1
 	source.ClearTextOnFocus = false
 	source.MultiLine = true
-	source.TextEditable = true -- Đã cho phép gõ / xóa / sửa chữ trực tiếp
+	source.TextEditable = true
 	source.Text = raw
 	source.TextColor3 = Color3.fromRGB(230, 230, 230)
 	source.Font = Enum.Font.Code
@@ -189,7 +180,6 @@ checkBtn.MouseButton1Click:Connect(function()
 	source.TextYAlignment = Enum.TextYAlignment.Top
 	source.TextWrapped = false
 
-	-- Sự kiện nhấn nút WRAP để đổi chế độ ngắt dòng
 	local isWrapped = false
 	wrapBtn.MouseButton1Click:Connect(function()
 		isWrapped = not isWrapped
