@@ -111,7 +111,7 @@ SetPosBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- [NÚT 2: BAY TỐC ĐỘ CAO ĐẾN VỊ TRÍ 1 - CHỐNG GIẬT LẠI]
+-- [NÚT 2: BAY TỐC ĐỘ CAO ĐẾN VỊ TRÍ 1]
 FlyToPosBtn.MouseButton1Click:Connect(function()
     if IsFlying then
         IsFlying = false
@@ -136,18 +136,15 @@ FlyToPosBtn.MouseButton1Click:Connect(function()
         FlyToPosBtn.Text = "DỪNG BAY"
         FlyToPosBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
 
-        -- Tốc độ bay cố định cực nhanh (300 studs/s)
         local distance = (hrp.Position - TargetPosition.Position).Magnitude
         local flySpeed = 1000 
         local duration = math.max(distance / flySpeed, 0.1)
 
-        -- Chuyển trạng thái Physics để không bị Server giật lại khi bay nhanh
         hum:ChangeState(Enum.HumanoidStateType.Physics)
 
         local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
         TweenTrack = TS:Create(hrp, tweenInfo, {CFrame = TargetPosition})
 
-        -- Vòng lặp Noclip và khóa vận tốc khi đang bay
         local flyLoop
         flyLoop = RS.Stepped:Connect(function()
             if IsFlying and char and hrp then
@@ -182,15 +179,13 @@ FlyToPosBtn.MouseButton1Click:Connect(function()
                     end
                 end
             end
-            Notify("Đã đến vị trí!")
         end)
     end
 end)
 
--- [CHỨC NĂNG - LOOP SPEED DI CHUYỂN (TỰ ĐỘNG CHẠY BẰNG BÀN PHÍM)]
+-- [CHỨC NĂNG - LOOP SPEED DI CHUYỂN]
 LoopSpeedConnection = RS.Heartbeat:Connect(function()
     pcall(function()
-        -- Chỉ kích hoạt tăng tốc di chuyển khi SpeedVal > 0 và không trong trạng thái bay
         if SpeedVal > 0 and not IsFlying then
             if LP.Character and LP.Character:FindFirstChild("Humanoid") and LP.Character:FindFirstChild("HumanoidRootPart") then
                 local hum = LP.Character.Humanoid
