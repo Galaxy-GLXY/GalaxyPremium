@@ -75,8 +75,11 @@ local function unblockHumanoid(humanoid)
     if humanoid.PlatformStand then humanoid.PlatformStand = false end
     if humanoid.Sit then humanoid.Sit = false end
 
-    humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-    humanoid:ChangeState(Enum.HumanoidStateType.Running)
+    -- Vô hiệu hóa các trạng thái gây ngã / ragdoll khi bị tấn công hoặc dính bẫy
+    pcall(function()
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+    end)
 end
 
 -- Hàm dọn dẹp và reset trạng thái an toàn
@@ -109,7 +112,7 @@ local function stopStealing()
     end
 end
 
--- Monitor Loop
+-- Monitor Loop (Giữ nhân vật luôn trong trạng thái chạy nhảy và chống ngắt quãng)
 task.spawn(function()
     while true do
         task.wait(0.05)
@@ -121,9 +124,13 @@ task.spawn(function()
                     humanoid.WalkSpeed = 16
                 end
                 
-                local currentState = humanoid:GetState()
-                if BANNED_STATES[currentState] then
-                    unblockHumanoid(humanoid)
+                unblockHumanoid(humanoid)
+                
+                -- Luôn ép nhân vật về trạng thái Running để không bị đứng hình khi tương tác/đánh
+                if humanoid:GetState() ~= Enum.HumanoidStateType.Running and not humanoid.Sit then
+                    pcall(function()
+                        humanoid:ChangeState(Enum.HumanoidStateType.Running)
+                    end)
                 end
             end
         end
