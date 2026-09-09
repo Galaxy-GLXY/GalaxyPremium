@@ -202,7 +202,7 @@ local function triggerGroundVelocitySteal()
     activeBG.CFrame = CFrame.lookAt(hrp.Position, FINAL_SAFE_ZONE)
     activeBG.Parent = hrp
 
-    local moveSpeed = 280
+    local moveSpeed = 275
     local startTime = tick()
     local distance = (FINAL_SAFE_ZONE - hrp.Position).Magnitude
     local estimatedTime = (distance / moveSpeed) + 0.4
