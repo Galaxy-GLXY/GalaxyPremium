@@ -1,8 +1,7 @@
--- Target Safe Zone Coordinates (X, Z giữ nguyên, Y nâng lên = 93.00)
 local TARGET_Y = 93.00
 local FINAL_SAFE_ZONE = Vector3.new(549.39, TARGET_Y, -365.50)
 
--- Services
+local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -10,7 +9,18 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- UI Construction
+local function modifyPrompt(prompt)
+    if prompt:IsA("ProximityPrompt") then
+        prompt.HoldDuration = 0
+    end
+end
+
+for _, obj in ipairs(Workspace:GetDescendants()) do
+    modifyPrompt(obj)
+end
+
+Workspace.DescendantAdded:Connect(modifyPrompt)
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "StealButtonGui"
 ScreenGui.ResetOnSpawn = false
@@ -39,7 +49,6 @@ UIStroke.Thickness = 3
 UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 UIStroke.Parent = StealButton
 
--- Hover Animations
 StealButton.MouseEnter:Connect(function()
     TweenService:Create(UIStroke, TweenInfo.new(0.2), {Thickness = 5, Color = Color3.fromRGB(0, 255, 255)}):Play()
     TweenService:Create(StealButton, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(0, 255, 255)}):Play()
@@ -50,7 +59,6 @@ StealButton.MouseLeave:Connect(function()
     TweenService:Create(StealButton, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(0, 191, 255)}):Play()
 end)
 
--- Variables
 local isStealing = false
 local groundPart = nil
 local activeBV = nil
@@ -60,7 +68,6 @@ local function isHoldingEgg(character)
     return character:FindFirstChildOfClass("Tool") ~= nil
 end
 
--- Hàm dừng/bật hoạt ảnh (Animation)
 local function setAnimationsEnabled(character, enabled)
     if not character then return end
     local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -96,7 +103,6 @@ local function unblockHumanoid(humanoid)
     end)
 end
 
--- Dọn dẹp object và khôi phục trạng thái ban đầu
 local function stopStealing()
     isStealing = false
     
@@ -128,7 +134,6 @@ local function stopStealing()
     end
 end
 
--- Vòng lặp duy trì trạng thái nhân vật
 task.spawn(function()
     while true do
         task.wait(0.05)
@@ -168,18 +173,15 @@ local function triggerGroundVelocitySteal()
 
     isStealing = true
 
-    -- 1. Tắt động tác chạy
     setAnimationsEnabled(character, false)
 
     StealButton.Text = "STOP"
     StealButton.TextColor3 = Color3.fromRGB(255, 69, 0)
     UIStroke.Color = Color3.fromRGB(255, 69, 0)
 
-    -- 2. TELEPORT LÊN ĐỘ CAO Y = 93.00 NGAY TẠI TỌA ĐỘ HIỆN TẠI
     hrp.AssemblyLinearVelocity = Vector3.zero
     hrp.CFrame = CFrame.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
 
-    -- 3. TẠO SÀN ĐỠ TÀNG HÌNH DƯỚI CHÂN ĐỂ TRÁNH ANTI-CHEAT RESET
     groundPart = Instance.new("Part")
     groundPart.Name = "AntiCheatSafetyPlatform"
     groundPart.Size = Vector3.new(8, 1, 8)
@@ -205,7 +207,6 @@ local function triggerGroundVelocitySteal()
     local distance = (FINAL_SAFE_ZONE - hrp.Position).Magnitude
     local estimatedTime = (distance / moveSpeed) + 0.4
 
-    -- 4. BAY LƯỚT NGANG BẰNG ĐỘ CAO Y = 93.00 VỀ SAFE ZONE
     while isStealing and character and hrp and humanoid.Health > 0 do
         setAnimationsEnabled(character, false)
         
@@ -229,7 +230,6 @@ local function triggerGroundVelocitySteal()
     if activeBV then activeBV:Destroy(); activeBV = nil end
     if activeBG then activeBG:Destroy(); activeBG = nil end
 
-    -- 5. GIỮ VỊ TRÍ TẠI SAFE ZONE TRONG 1.5S ĐỂ HOÀN TẤT CƯỚP
     local finalCFrame = CFrame.new(FINAL_SAFE_ZONE)
     local tpEndTime = tick() + 1.5
 
@@ -252,7 +252,6 @@ local function triggerGroundVelocitySteal()
         RunService.Heartbeat:Wait()
     end
 
-    -- Khôi phục trạng thái di chuyển bình thường
     stopStealing()
 end
 
