@@ -1,5 +1,6 @@
--- Target Safe Zone Coordinates
-local FINAL_SAFE_ZONE = Vector3.new(549.39, 71.13, -365.50)
+-- Target Safe Zone Coordinates (X, Z giữ nguyên, Y nâng lên = 93.00)
+local TARGET_Y = 93.00
+local FINAL_SAFE_ZONE = Vector3.new(549.39, TARGET_Y, -365.50)
 
 -- Services
 local Players = game:GetService("Players")
@@ -59,15 +60,29 @@ local function isHoldingEgg(character)
     return character:FindFirstChildOfClass("Tool") ~= nil
 end
 
-local BANNED_STATES = {
-    [Enum.HumanoidStateType.Physics] = true,
-}
-
-pcall(function()
-    if Enum.HumanoidStateType["FloatFormStanding"] then
-        BANNED_STATES[Enum.HumanoidStateType["FloatFormStanding"]] = true
+-- Hàm dừng/bật hoạt ảnh (Animation)
+local function setAnimationsEnabled(character, enabled)
+    if not character then return end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    local animator = humanoid:FindFirstChildOfClass("Animator")
+    if animator then
+        for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+            if enabled then
+                track:AdjustSpeed(1)
+            else
+                track:Stop(0)
+            end
+        end
     end
-end)
+
+    if not enabled then
+        humanoid.WalkSpeed = 0
+    else
+        humanoid.WalkSpeed = 16
+    end
+end
 
 local function unblockHumanoid(humanoid)
     if not humanoid then return end
@@ -75,14 +90,13 @@ local function unblockHumanoid(humanoid)
     if humanoid.PlatformStand then humanoid.PlatformStand = false end
     if humanoid.Sit then humanoid.Sit = false end
 
-    -- Vô hiệu hóa các trạng thái gây ngã / ragdoll khi bị tấn công hoặc dính bẫy
     pcall(function()
         humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
         humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
     end)
 end
 
--- Hàm dọn dẹp và reset trạng thái an toàn
+-- Dọn dẹp object và khôi phục trạng thái ban đầu
 local function stopStealing()
     isStealing = false
     
@@ -108,11 +122,13 @@ local function stopStealing()
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         if humanoid then
             unblockHumanoid(humanoid)
+            humanoid:ChangeState(Enum.HumanoidStateType.Running)
         end
+        setAnimationsEnabled(character, true)
     end
 end
 
--- Monitor Loop (Giữ nhân vật luôn trong trạng thái chạy nhảy và chống ngắt quãng)
+-- Vòng lặp duy trì trạng thái nhân vật
 task.spawn(function()
     while true do
         task.wait(0.05)
@@ -126,7 +142,6 @@ task.spawn(function()
                 
                 unblockHumanoid(humanoid)
                 
-                -- Luôn ép nhân vật về trạng thái Running để không bị đứng hình khi tương tác/đánh
                 if humanoid:GetState() ~= Enum.HumanoidStateType.Running and not humanoid.Sit then
                     pcall(function()
                         humanoid:ChangeState(Enum.HumanoidStateType.Running)
@@ -138,7 +153,6 @@ task.spawn(function()
 end)
 
 local function triggerGroundVelocitySteal()
-    -- Nếu đang chạy mà bấm lại thì sẽ TẮT NGAY LẬP TỨC
     if isStealing then
         stopStealing()
         return
@@ -154,26 +168,26 @@ local function triggerGroundVelocitySteal()
 
     isStealing = true
 
-    -- Đổi giao diện nút thành trạng thái ĐANG CHẠY / CÓ THỂ TẮT
-    StealButton.Text = "DỪNG LẠI"
+    -- 1. Tắt động tác chạy
+    setAnimationsEnabled(character, false)
+
+    StealButton.Text = "STOP"
     StealButton.TextColor3 = Color3.fromRGB(255, 69, 0)
     UIStroke.Color = Color3.fromRGB(255, 69, 0)
 
-    -- Target safe zone với độ cao +10 Y
-    local targetPosition = FINAL_SAFE_ZONE + Vector3.new(0, 10, 0)
+    -- 2. TELEPORT LÊN ĐỘ CAO Y = 93.00 NGAY TẠI TỌA ĐỘ HIỆN TẠI
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    hrp.CFrame = CFrame.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
 
-    -- TẠO PART SÀN TÀNG HÌNH BÊN DƯỚI CHÂN
+    -- 3. TẠO SÀN ĐỠ TÀNG HÌNH DƯỚI CHÂN ĐỂ TRÁNH ANTI-CHEAT RESET
     groundPart = Instance.new("Part")
     groundPart.Name = "AntiCheatSafetyPlatform"
-    groundPart.Size = Vector3.new(6, 1, 6)
+    groundPart.Size = Vector3.new(8, 1, 8)
     groundPart.Anchored = true
     groundPart.CanCollide = true
     groundPart.Transparency = 1
-    groundPart.CFrame = hrp.CFrame - Vector3.new(0, 3.5, 0)
+    groundPart.CFrame = CFrame.new(hrp.Position.X, TARGET_Y - 3.5, hrp.Position.Z)
     groundPart.Parent = workspace
-
-    humanoid.Sit = true
-    humanoid:ChangeState(Enum.HumanoidStateType.Running)
 
     activeBV = Instance.new("BodyVelocity")
     activeBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
@@ -183,30 +197,31 @@ local function triggerGroundVelocitySteal()
     activeBG = Instance.new("BodyGyro")
     activeBG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
     activeBG.P = 90000
-    activeBG.CFrame = CFrame.lookAt(hrp.Position, Vector3.new(targetPosition.X, hrp.Position.Y, targetPosition.Z))
+    activeBG.CFrame = CFrame.lookAt(hrp.Position, FINAL_SAFE_ZONE)
     activeBG.Parent = hrp
 
     local moveSpeed = 280
     local startTime = tick()
-    local distance = (targetPosition - hrp.Position).Magnitude
+    local distance = (FINAL_SAFE_ZONE - hrp.Position).Magnitude
     local estimatedTime = (distance / moveSpeed) + 0.4
 
-    -- Step 1: Bay thẳng tới Safe Zone (+10 Y)
+    -- 4. BAY LƯỚT NGANG BẰNG ĐỘ CAO Y = 93.00 VỀ SAFE ZONE
     while isStealing and character and hrp and humanoid.Health > 0 do
-        humanoid.Sit = true
-        humanoid:ChangeState(Enum.HumanoidStateType.Running)
+        setAnimationsEnabled(character, false)
+        
+        local currentFlatPos = Vector3.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
         
         if groundPart then
-            groundPart.CFrame = hrp.CFrame - Vector3.new(0, 3.5, 0)
+            groundPart.CFrame = CFrame.new(currentFlatPos.X, TARGET_Y - 3.5, currentFlatPos.Z)
         end
 
-        local currentDist = (targetPosition - hrp.Position).Magnitude
-        if currentDist <= 6 or (tick() - startTime) > estimatedTime then
+        local currentDist = (FINAL_SAFE_ZONE - currentFlatPos).Magnitude
+        if currentDist <= 5 or (tick() - startTime) > estimatedTime then
             break
         end
 
-        local currentDir = (targetPosition - hrp.Position).Unit
-        activeBV.Velocity = currentDir * moveSpeed
+        local currentDir = (FINAL_SAFE_ZONE - currentFlatPos).Unit
+        activeBV.Velocity = Vector3.new(currentDir.X * moveSpeed, 0, currentDir.Z * moveSpeed)
 
         task.wait(0.015)
     end
@@ -214,9 +229,9 @@ local function triggerGroundVelocitySteal()
     if activeBV then activeBV:Destroy(); activeBV = nil end
     if activeBG then activeBG:Destroy(); activeBG = nil end
 
-    -- Step 2: Loop TP giữ vị trí tại Safe Zone (+10 Y) trong 2 giây
-    local targetCFrame = CFrame.new(targetPosition)
-    local tpEndTime = tick() + 2.0
+    -- 5. GIỮ VỊ TRÍ TẠI SAFE ZONE TRONG 1.5S ĐỂ HOÀN TẤT CƯỚP
+    local finalCFrame = CFrame.new(FINAL_SAFE_ZONE)
+    local tpEndTime = tick() + 1.5
 
     while isStealing and tick() < tpEndTime do
         local char = LocalPlayer.Character
@@ -224,21 +239,20 @@ local function triggerGroundVelocitySteal()
             local root = char:FindFirstChild("HumanoidRootPart")
             local hum = char:FindFirstChildOfClass("Humanoid")
             if root and hum and hum.Health > 0 then
-                hum.Sit = true
-                hum:ChangeState(Enum.HumanoidStateType.Running)
+                setAnimationsEnabled(char, false)
                 root.AssemblyLinearVelocity = Vector3.zero
                 root.AssemblyAngularVelocity = Vector3.zero
-                root.CFrame = targetCFrame
+                root.CFrame = finalCFrame
 
                 if groundPart then
-                    groundPart.CFrame = targetCFrame - Vector3.new(0, 3.5, 0)
+                    groundPart.CFrame = finalCFrame - Vector3.new(0, 3.5, 0)
                 end
             end
         end
         RunService.Heartbeat:Wait()
     end
 
-    -- Hoàn tất quá trình và tự động trả về trạng thái ban đầu
+    -- Khôi phục trạng thái di chuyển bình thường
     stopStealing()
 end
 
