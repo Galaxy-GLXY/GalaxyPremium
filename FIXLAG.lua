@@ -63,7 +63,7 @@ end)
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "GALAXY FFlag",
-        Text = "Đã chuyển toàn bộ khối thành phẳng trơn (Smooth Plastic)!",
+        Text = "Đã áp dụng FFlag!",
         Duration = 3
     })
 end)
