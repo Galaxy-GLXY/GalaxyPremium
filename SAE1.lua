@@ -9,8 +9,7 @@ local SAFE_MIN_Z = -582.00
 local SAFE_MAX_Z = -146.00
 
 local ZONES = {
-    {Name = "Lake", Position = Vector3.new(743.59, TARGET_Y, -396.95)},
-    {Name = "Desert", Position = Vector3.new(949.93, TARGET_Y, -333.33)},
+    {Name = "Safe Zone (Steal)", Position = FINAL_SAFE_ZONE, IsSpecial = true},
     {Name = "Jungle", Position = Vector3.new(1190.65, TARGET_Y, -397.29)},
     {Name = "Snow", Position = Vector3.new(1490.13, TARGET_Y, -326.33)},
     {Name = "Volcano", Position = Vector3.new(1883.90, TARGET_Y, -383.63)},
@@ -46,71 +45,14 @@ ScreenGui.Name = "UnifiedScriptGui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- ==================== NÚT STEAL ====================
-local StealButton = Instance.new("TextButton")
-StealButton.Name = "StealButton"
-StealButton.Size = UDim2.new(0, 160, 0, 50)
-StealButton.Position = UDim2.new(0.82, 0, 0.05, 0)
-StealButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-StealButton.Text = "STEAL"
-StealButton.TextColor3 = Color3.fromRGB(0, 191, 255)
-StealButton.TextSize = 22
-StealButton.Font = Enum.Font.GothamBold
-StealButton.Active = true
-StealButton.Draggable = true
-StealButton.Parent = ScreenGui
-
-local StealCorner = Instance.new("UICorner")
-StealCorner.CornerRadius = UDim.new(0, 15)
-StealCorner.Parent = StealButton
-
-local StealStroke = Instance.new("UIStroke")
-StealStroke.Color = Color3.fromRGB(0, 191, 255)
-StealStroke.Thickness = 3
-StealStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-StealStroke.Parent = StealButton
-
-StealButton.MouseEnter:Connect(function()
-    TweenService:Create(StealStroke, TweenInfo.new(0.2), {Thickness = 5, Color = Color3.fromRGB(0, 255, 255)}):Play()
-    TweenService:Create(StealButton, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(0, 255, 255)}):Play()
-end)
-
-StealButton.MouseLeave:Connect(function()
-    TweenService:Create(StealStroke, TweenInfo.new(0.2), {Thickness = 3, Color = Color3.fromRGB(0, 191, 255)}):Play()
-    TweenService:Create(StealButton, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(0, 191, 255)}):Play()
-end)
-
--- ==================== NÚT MỞ/ĐÓNG MENU TELEPORT ====================
-local ToggleMenuButton = Instance.new("TextButton")
-ToggleMenuButton.Name = "ToggleMenuButton"
-ToggleMenuButton.Size = UDim2.new(0, 160, 0, 40)
-ToggleMenuButton.Position = UDim2.new(0.82, 0, 0.18, 0)
-ToggleMenuButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ToggleMenuButton.Text = "TELEPORT UI"
-ToggleMenuButton.TextColor3 = Color3.fromRGB(0, 191, 255)
-ToggleMenuButton.TextSize = 16
-ToggleMenuButton.Font = Enum.Font.GothamBold
-ToggleMenuButton.Active = true
-ToggleMenuButton.Draggable = true
-ToggleMenuButton.Parent = ScreenGui
-
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 10)
-ToggleCorner.Parent = ToggleMenuButton
-
-local ToggleStroke = Instance.new("UIStroke")
-ToggleStroke.Color = Color3.fromRGB(0, 191, 255)
-ToggleStroke.Thickness = 2
-ToggleStroke.Parent = ToggleMenuButton
-
 -- ==================== BẢNG MENU TELEPORT ZONES ====================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 200, 0, 390)
-MainFrame.Position = UDim2.new(0.82, 0, 0.28, 0)
+MainFrame.Position = UDim2.new(0.82, 0, 0.15, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.BorderSizePixel = 0
-MainFrame.Visible = false
+MainFrame.Visible = true
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
@@ -187,11 +129,6 @@ UIPadding.PaddingTop = UDim.new(0, 10)
 UIPadding.PaddingBottom = UDim.new(0, 10)
 UIPadding.Parent = ContentScroll
 
--- Sự kiện ẩn hiện menu Teleport
-ToggleMenuButton.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-end)
-
 -- Kéo thả menu qua TopBar
 local dragging, dragInput, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
@@ -236,6 +173,8 @@ local isTraveling = false
 local groundPart = nil
 local activeBV = nil
 local activeBG = nil
+local activeZoneButton = nil
+local originalButtonText = ""
 
 local function isHoldingEgg(character)
     return character:FindFirstChildOfClass("Tool") ~= nil
@@ -275,9 +214,17 @@ local function stopTravel()
     if activeBV then activeBV:Destroy(); activeBV = nil end
     if activeBG then activeBG:Destroy(); activeBG = nil end
 
-    StealButton.Text = "STEAL"
-    StealButton.TextColor3 = Color3.fromRGB(0, 191, 255)
-    StealStroke.Color = Color3.fromRGB(0, 191, 255)
+    if activeZoneButton then
+        activeZoneButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        activeZoneButton.Text = originalButtonText
+        local stroke = activeZoneButton:FindFirstChildOfClass("UIStroke")
+        if stroke and activeZoneButton.Name:find("Safe Zone") then
+            stroke.Color = Color3.fromRGB(255, 255, 255)
+        elseif stroke then
+            stroke.Color = Color3.fromRGB(0, 191, 255)
+        end
+        activeZoneButton = nil
+    end
 
     local character = LocalPlayer.Character
     if character then
@@ -371,10 +318,11 @@ local function executeFlight(destinationPos)
     if groundPart then groundPart:Destroy(); groundPart = nil end
 end
 
--- Hàm thực hiện hành trình chung cho cả nút Steal và Teleport Zones
-local function moveToTarget(targetPosition, isStealAction)
+-- Hàm thực hiện hành trình đến vùng chọn
+local function moveToTarget(targetPosition, clickedButton, zoneName)
     if isTraveling then
         stopTravel()
+        return
     end
 
     local character = LocalPlayer.Character
@@ -386,13 +334,17 @@ local function moveToTarget(targetPosition, isStealAction)
     if not hrp or not humanoid or humanoid.Health <= 0 then return end
 
     isTraveling = true
-    setAnimationsEnabled(character, false)
+    activeZoneButton = clickedButton
+    originalButtonText = zoneName
 
-    if isStealAction then
-        StealButton.Text = "STOP"
-        StealButton.TextColor3 = Color3.fromRGB(255, 69, 0)
-        StealStroke.Color = Color3.fromRGB(255, 69, 0)
+    clickedButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    clickedButton.Text = "STOP"
+    local stroke = clickedButton:FindFirstChildOfClass("UIStroke")
+    if stroke then
+        stroke.Color = Color3.fromRGB(255, 69, 0)
     end
+
+    setAnimationsEnabled(character, false)
 
     hrp.AssemblyLinearVelocity = Vector3.zero
     hrp.CFrame = CFrame.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
@@ -409,41 +361,34 @@ local function moveToTarget(targetPosition, isStealAction)
         executeFlight(targetPosition)
     end
 
-    groundPart = Instance.new("Part")
-    groundPart.Name = "AntiCheatSafetyPlatform"
-    groundPart.Size = Vector3.new(8, 1, 8)
-    groundPart.Anchored = true
-    groundPart.CanCollide = true
-    groundPart.Transparency = 1
-    groundPart.CFrame = CFrame.new(targetPosition.X, TARGET_Y - 3.5, targetPosition.Z)
-    groundPart.Parent = workspace
+    if isTraveling then
+        groundPart = Instance.new("Part")
+        groundPart.Name = "AntiCheatSafetyPlatform"
+        groundPart.Size = Vector3.new(8, 1, 8)
+        groundPart.Anchored = true
+        groundPart.CanCollide = true
+        groundPart.Transparency = 1
+        groundPart.CFrame = CFrame.new(targetPosition.X, TARGET_Y - 3.5, targetPosition.Z)
+        groundPart.Parent = workspace
 
-    local finalCFrame = CFrame.new(targetPosition)
-    local tpEndTime = tick() + 1.0
+        local finalCFrame = CFrame.new(targetPosition)
+        local tpEndTime = tick() + 1.0
 
-    while isTraveling and tick() < tpEndTime and character and hrp and humanoid.Health > 0 do
-        setAnimationsEnabled(character, false)
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
-        hrp.CFrame = finalCFrame
+        while isTraveling and tick() < tpEndTime and character and hrp and humanoid.Health > 0 do
+            setAnimationsEnabled(character, false)
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
+            hrp.CFrame = finalCFrame
 
-        if groundPart then
-            groundPart.CFrame = finalCFrame - Vector3.new(0, 3.5, 0)
+            if groundPart then
+                groundPart.CFrame = finalCFrame - Vector3.new(0, 3.5, 0)
+            end
+            RunService.Heartbeat:Wait()
         end
-        RunService.Heartbeat:Wait()
     end
 
     stopTravel()
 end
-
--- Nút Steal sự kiện
-StealButton.MouseButton1Click:Connect(function()
-    if isTraveling then
-        stopTravel()
-    else
-        moveToTarget(FINAL_SAFE_ZONE, true)
-    end
-end)
 
 -- Tạo các nút Teleport Zones trong menu
 for _, zone in ipairs(ZONES) do
@@ -466,8 +411,27 @@ for _, zone in ipairs(ZONES) do
     ButtonStroke.Thickness = 1.5
     ButtonStroke.Parent = ZoneButton
 
+    if zone.IsSpecial then
+        ZoneButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ZoneButton.Font = Enum.Font.GothamBold
+        
+        task.spawn(function()
+            while ZoneButton and ZoneButton.Parent do
+                if not isTraveling or activeZoneButton ~= ZoneButton then
+                    for i = 0, 1, 0.01 do
+                        if not ZoneButton or not ZoneButton.Parent or (isTraveling and activeZoneButton == ZoneButton) then break end
+                        ButtonStroke.Color = Color3.fromHSV(i, 1, 1)
+                        task.wait(0.05)
+                    end
+                else
+                    task.wait(0.2)
+                end
+            end
+        end)
+    end
+
     ZoneButton.MouseButton1Click:Connect(function()
-        moveToTarget(zone.Position, false)
+        moveToTarget(zone.Position, ZoneButton, zone.Name)
     end)
 end
 
