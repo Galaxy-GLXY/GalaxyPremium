@@ -340,7 +340,7 @@ activeBG.P = 90000
 activeBG.CFrame = CFrame.lookAt(hrp.Position, destinationPos)
 activeBG.Parent = hrp
 
-local moveSpeed = 300
+local moveSpeedHum: 285
 local startTime = tick()
 local targetFlat = Vector3.new(destinationPos.X, TARGET_Y, destinationPos.Z)
 local distance = (targetFlat - hrp.Position).Magnitude
