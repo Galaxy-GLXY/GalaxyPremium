@@ -289,7 +289,7 @@ local function executeFlight(destinationPos)
     activeBG.CFrame = CFrame.lookAt(hrp.Position, destinationPos)
     activeBG.Parent = hrp
 
-    local moveSpeed = 285
+    local moveSpeed = 282
     local startTime = tick()
     local targetFlat = Vector3.new(destinationPos.X, TARGET_Y, destinationPos.Z)
     local distance = (targetFlat - hrp.Position).Magnitude
