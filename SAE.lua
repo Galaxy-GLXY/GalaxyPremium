@@ -29,15 +29,17 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+-- ==================== TÍNH NĂNG INSTANT PROXIMITY PROMPT ====================
 local function modifyPrompt(prompt)
     if prompt:IsA("ProximityPrompt") then
-        prompt.HoldDuration = 0
+        prompt.HoldDuration = 0 -- Chuyển thời gian đè về 0 giây
     end
 end
 
 for _, obj in ipairs(Workspace:GetDescendants()) do
     modifyPrompt(obj)
 end
+
 Workspace.DescendantAdded:Connect(modifyPrompt)
 
 local ScreenGui = Instance.new("ScreenGui")
