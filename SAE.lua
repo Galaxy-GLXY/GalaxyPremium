@@ -1,1 +1,475 @@
-local v0=209 -116 ;local v1=Vector3.new(1962.3899999999999 -(447 + 966) ,v0, -(999.5 -634));local v2=Vector3.new(2364.54 -(1703 + 114) ,v0, -(1065.99 -(376 + 325)));local v3=365.2;local v4=552;local v5= -582;local v6= -146;local v7={{Name="Lake",Position=Vector3.new(743.59,v0, -(1218.95 -822))},{Name="Desert",Position=Vector3.new(949.93,v0, -(96.32999999999998 + 237))},{Name="Jungle",Position=Vector3.new(1204.65 -(9 + 5) ,v0, -(773.29 -(85 + 291)))},{Name="Snow",Position=Vector3.new(5669.13 -4179 ,v0, -326.33)},{Name="Volcano",Position=Vector3.new(1554.9 + 329 ,v0, -383.63)},{Name="Abyss Ocean",Position=Vector3.new(2280.29,v0, -(273.18 + 62))},{Name="Prehistoric",Position=Vector3.new(2816.63,v0, -388.11)},{Name="Cosmic",Position=Vector3.new(3391.44,v0, -(2265.1 -(1869 + 61)))},{Name="Cherry Blossom",Position=Vector3.new(14189.82 -10160 ,v0, -388.07)},{Name="Titan Temple",Position=Vector3.new(7367.82 -2570 ,v0, -(47.47000000000003 + 292))},{Name="Angels/Demons",Position=Vector3.new(7775.86 -2117 ,v0, -(320.98 + 20))}};local v8=game:GetService("Workspace");local v9=game:GetService("Players");local v10=game:GetService("TweenService");local v11=game:GetService("RunService");local v12=v9.LocalPlayer;local v13=v12:WaitForChild("PlayerGui");local function v14(v150) if v150:IsA("ProximityPrompt") then v150.HoldDuration=1474 -(1329 + 145) ;end end for v151,v152 in ipairs(v8:GetDescendants()) do v14(v152);end v8.DescendantAdded:Connect(v14);local v15=Instance.new("ScreenGui");v15.Name="UnifiedScriptGui";v15.ResetOnSpawn=false;v15.Parent=v13;local v19=Instance.new("TextButton");v19.Name="StealButton";v19.Size=UDim2.new(971 -(140 + 831) ,2010 -(1409 + 441) ,718 -(15 + 703) ,50);v19.Position=UDim2.new(0.82,0 + 0 ,0.05,0);v19.BackgroundColor3=Color3.fromRGB(438 -(262 + 176) ,1721 -(345 + 1376) ,0);v19.Text="STEAL";v19.TextColor3=Color3.fromRGB(688 -(198 + 490) ,191,1126 -871 );v19.TextSize=52 -30 ;v19.Font=Enum.Font.GothamBold;v19.Active=true;v19.Draggable=true;v19.Parent=v15;local v32=Instance.new("UICorner");v32.CornerRadius=UDim.new(0,1221 -(696 + 510) );v32.Parent=v19;local v35=Instance.new("UIStroke");v35.Color=Color3.fromRGB(0 -0 ,191,1517 -(1091 + 171) );v35.Thickness=3;v35.ApplyStrokeMode=Enum.ApplyStrokeMode.Border;v35.Parent=v19;v19.MouseEnter:Connect(function() local v153=0;while true do if (v153==0) then v10:Create(v35,TweenInfo.new(0.2 + 0 ),{Thickness=15 -10 ,Color=Color3.fromRGB(0,845 -590 ,629 -(123 + 251) )}):Play();v10:Create(v19,TweenInfo.new(0.2),{TextColor3=Color3.fromRGB(0 -0 ,953 -(208 + 490) ,22 + 233 )}):Play();break;end end end);v19.MouseLeave:Connect(function() local v154=0 + 0 ;while true do if (v154==(836 -(660 + 176))) then v10:Create(v35,TweenInfo.new(0.2 + 0 ),{Thickness=3,Color=Color3.fromRGB(202 -(14 + 188) ,866 -(534 + 141) ,103 + 152 )}):Play();v10:Create(v19,TweenInfo.new(0.2 + 0 ),{TextColor3=Color3.fromRGB(0,184 + 7 ,535 -280 )}):Play();break;end end end);local v41=Instance.new("TextButton");v41.Name="ToggleMenuButton";v41.Size=UDim2.new(0 -0 ,448 -288 ,0 + 0 ,26 + 14 );v41.Position=UDim2.new(396.82 -(115 + 281) ,0,0.18 -0 ,0 + 0 );v41.BackgroundColor3=Color3.fromRGB(48 -28 ,73 -53 ,887 -(550 + 317) );v41.Text="TELEPORT UI";v41.TextColor3=Color3.fromRGB(0,275 -84 ,358 -103 );v41.TextSize=44 -28 ;v41.Font=Enum.Font.GothamBold;v41.Active=true;v41.Draggable=true;v41.Parent=v15;local v53=Instance.new("UICorner");v53.CornerRadius=UDim.new(0,295 -(134 + 151) );v53.Parent=v41;local v56=Instance.new("UIStroke");v56.Color=Color3.fromRGB(1665 -(970 + 695) ,191,255);v56.Thickness=3 -1 ;v56.Parent=v41;local v60=Instance.new("Frame");v60.Name="MainFrame";v60.Size=UDim2.new(0,2190 -(582 + 1408) ,0 -0 ,490 -100 );v60.Position=UDim2.new(0.82 -0 ,0,1824.28 -(1195 + 629) ,0);v60.BackgroundColor3=Color3.fromRGB(26 -6 ,261 -(187 + 54) ,20);v60.BorderSizePixel=0;v60.Visible=false;v60.Parent=v15;local v68=Instance.new("UICorner");v68.CornerRadius=UDim.new(0,792 -(162 + 618) );v68.Parent=v60;local v71=Instance.new("UIStroke");v71.Color=Color3.fromRGB(0 + 0 ,191,170 + 85 );v71.Thickness=2;v71.Parent=v60;local v75=Instance.new("Frame");v75.Name="TopBar";v75.Size=UDim2.new(1,0 -0 ,0 -0 ,4 + 36 );v75.BackgroundColor3=Color3.fromRGB(1646 -(1373 + 263) ,1010 -(451 + 549) ,10);v75.BorderSizePixel=0;v75.Parent=v60;local v81=Instance.new("UICorner");v81.CornerRadius=UDim.new(0 + 0 ,18 -6 );v81.Parent=v75;local v84=Instance.new("Frame");v84.Size=UDim2.new(1 -0 ,1384 -(746 + 638) ,0,4 + 6 );v84.Position=UDim2.new(0 -0 ,341 -(218 + 123) ,1582 -(1535 + 46) , -(10 + 0));v84.BackgroundColor3=Color3.fromRGB(2 + 8 ,570 -(306 + 254) ,1 + 9 );v84.BorderSizePixel=0 -0 ;v84.Parent=v75;local v90=Instance.new("TextLabel");v90.Size=UDim2.new(1468 -(899 + 568) , -(30 + 15),2 -1 ,603 -(268 + 335) );v90.Position=UDim2.new(290 -(60 + 230) ,582 -(426 + 146) ,0 + 0 ,1456 -(282 + 1174) );v90.BackgroundTransparency=812 -(569 + 242) ;v90.Text="TELEPORT ZONES";v90.TextXAlignment=Enum.TextXAlignment.Left;v90.TextColor3=Color3.fromRGB(0 -0 ,11 + 180 ,1279 -(706 + 318) );v90.TextSize=14;v90.Font=Enum.Font.GothamBold;v90.Parent=v75;local v101=Instance.new("TextButton");v101.Name="MinimizeButton";v101.Size=UDim2.new(1251 -(721 + 530) ,1301 -(945 + 326) ,0 -0 ,30);v101.Position=UDim2.new(1 + 0 , -(735 -(271 + 429)),0.5 + 0 , -15);v101.BackgroundColor3=Color3.fromRGB(30,30,1530 -(1408 + 92) );v101.Text="-";v101.TextColor3=Color3.fromRGB(1086 -(461 + 625) ,191,1543 -(993 + 295) );v101.TextSize=18;v101.Font=Enum.Font.GothamBold;v101.Parent=v75;local v111=Instance.new("UICorner");v111.CornerRadius=UDim.new(0 + 0 ,1177 -(418 + 753) );v111.Parent=v101;local v114=Instance.new("ScrollingFrame");v114.Name="ContentScroll";v114.Size=UDim2.new(1 + 0 ,0,1 + 0 , -40);v114.Position=UDim2.new(0 + 0 ,0 + 0 ,529 -(406 + 123) ,1809 -(1749 + 20) );v114.BackgroundTransparency=1;v114.BorderSizePixel=0;v114.ClipsDescendants=true;v114.ScrollBarThickness=2 + 4 ;v114.Parent=v60;local v123=Instance.new("UIListLayout");v123.HorizontalAlignment=Enum.HorizontalAlignment.Center;v123.SortOrder=Enum.SortOrder.LayoutOrder;v123.Padding=UDim.new(0,1328 -(1249 + 73) );v123.Parent=v114;local v130=Instance.new("UIPadding");v130.PaddingTop=UDim.new(0,4 + 6 );v130.PaddingBottom=UDim.new(1145 -(466 + 679) ,24 -14 );v130.Parent=v114;v41.MouseButton1Click:Connect(function() v60.Visible= not v60.Visible;end);local v134,v135,v136,v137;v75.InputBegan:Connect(function(v156) if ((v156.UserInputType==Enum.UserInputType.MouseButton1) or (v156.UserInputType==Enum.UserInputType.Touch)) then local v211=0 -0 ;local v212;while true do if (v211==(1900 -(106 + 1794))) then v212=0 + 0 ;while true do if (v212==(1 + 0)) then v137=v60.Position;v156.Changed:Connect(function() if (v156.UserInputState==Enum.UserInputState.End) then v134=false;end end);break;end if (v212==(0 -0)) then v134=true;v136=v156.Position;v212=2 -1 ;end end break;end end end end);v75.InputChanged:Connect(function(v157) if ((v157.UserInputType==Enum.UserInputType.MouseMovement) or (v157.UserInputType==Enum.UserInputType.Touch)) then v135=v157;end end);v11.RenderStepped:Connect(function() if (v134 and v135) then local v213=114 -(4 + 110) ;local v214;while true do if (v213==0) then v214=v135.Position-v136 ;v60.Position=UDim2.new(v137.X.Scale,v137.X.Offset + v214.X ,v137.Y.Scale,v137.Y.Offset + v214.Y );break;end end end end);local v138=false;v101.MouseButton1Click:Connect(function() local v158=584 -(57 + 527) ;local v159;while true do if (v158==0) then v159=0;while true do if (v159==(1427 -(41 + 1386))) then v138= not v138;if v138 then local v287=0;local v288;while true do if (v287==0) then v288=103 -(17 + 86) ;while true do if (v288==(0 + 0)) then v101.Text="+";v10:Create(v60,TweenInfo.new(0.2 -0 ),{Size=UDim2.new(0,200,0 -0 ,40)}):Play();break;end end break;end end else local v289=0;while true do if (v289==(166 -(122 + 44))) then v101.Text="-";v10:Create(v60,TweenInfo.new(0.2 -0 ),{Size=UDim2.new(0 -0 ,163 + 37 ,0 + 0 ,390)}):Play();break;end end end break;end end break;end end end);local v139=false;local v140=nil;local v141=nil;local v142=nil;local function v143(v160) return v160:FindFirstChildOfClass("Tool")~=nil ;end local function v144(v161,v162) if  not v161 then return;end local v163=v161:FindFirstChildOfClass("Humanoid");if  not v163 then return;end local v164=v163:FindFirstChildOfClass("Animator");if v164 then for v220,v221 in ipairs(v164:GetPlayingAnimationTracks()) do if v162 then v221:AdjustSpeed(1);else v221:Stop(0 -0 );end end end v163.WalkSpeed=(v162 and 16) or (65 -(30 + 35)) ;end local function v145(v166) local v167=0 + 0 ;while true do if (v167==(1258 -(1043 + 214))) then if v166.Sit then v166.Sit=false;end pcall(function() local v246=0;local v247;while true do if (v246==0) then v247=0;while true do if (v247==(0 -0)) then v166:SetStateEnabled(Enum.HumanoidStateType.FallingDown,false);v166:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,false);break;end end break;end end end);break;end if (v167==(1212 -(323 + 889))) then if  not v166 then return;end if v166.PlatformStand then v166.PlatformStand=false;end v167=1;end end end local function v146() v139=false;if v140 then local v215=0 -0 ;while true do if (v215==(580 -(361 + 219))) then v140:Destroy();v140=nil;break;end end end if v141 then local v216=320 -(53 + 267) ;while true do if (v216==(0 + 0)) then v141:Destroy();v141=nil;break;end end end if v142 then v142:Destroy();v142=nil;end v19.Text="STEAL";v19.TextColor3=Color3.fromRGB(413 -(15 + 398) ,1173 -(18 + 964) ,255);v35.Color=Color3.fromRGB(0 -0 ,191,148 + 107 );local v171=v12.Character;if v171 then local v217=0 + 0 ;local v218;while true do if ((851 -(20 + 830))==v217) then v144(v171,true);break;end if ((0 + 0)==v217) then local v261=126 -(116 + 10) ;while true do if (v261==(0 + 0)) then v218=v171:FindFirstChildOfClass("Humanoid");if v218 then local v290=738 -(542 + 196) ;local v291;while true do if (v290==(0 -0)) then v291=0;while true do if (v291==(0 + 0)) then v145(v218);v218:ChangeState(Enum.HumanoidStateType.Running);break;end end break;end end end v261=1 + 0 ;end if (1==v261) then v217=1;break;end end end end end end task.spawn(function() while true do local v207=0 + 0 ;local v208;while true do if (0==v207) then task.wait(0.05 -0 );v208=v12.Character;v207=2 -1 ;end if (v207==(1552 -(1126 + 425))) then if v208 then local v269=405 -(118 + 287) ;local v270;while true do if (0==v269) then v270=v208:FindFirstChildOfClass("Humanoid");if (v270 and (v270.Health>(0 -0)) and  not v139) then local v293=0;while true do if (v293==(1122 -(118 + 1003))) then if ((v270:GetState()~=Enum.HumanoidStateType.Running) and  not v270.Sit) then pcall(function() v270:ChangeState(Enum.HumanoidStateType.Running);end);end break;end if (v293==(0 -0)) then if v143(v208) then v270.WalkSpeed=393 -(142 + 235) ;end v145(v270);v293=4 -3 ;end end end break;end end end break;end end end end);local function v147(v172) local v173=0;local v174;local v175;local v176;local v177;local v178;local v179;local v180;local v181;while true do if (v173==(1 + 2)) then v142.MaxTorque=Vector3.new(8999999488,9000000465 -(553 + 424) ,8859902383 --140097105 );v142.P=79283 + 10717 ;v142.CFrame=CFrame.lookAt(v175.Position,v172);v142.Parent=v175;v177=300;v178=tick();v173=4 + 0 ;end if (v173==(2 + 0)) then v140.Parent=workspace;v141=Instance.new("BodyVelocity");v141.MaxForce=Vector3.new(8999999488 -0 ,8871517084 --128482404 ,8999999488 -0 );v141.Velocity=Vector3.zero;v141.Parent=v175;v142=Instance.new("BodyGyro");v173=1 + 2 ;end if (v173==5) then if v140 then local v262=0 -0 ;while true do if (v262==(753 -(239 + 514))) then v140:Destroy();v140=nil;break;end end end break;end if (v173==(2 + 2)) then v179=Vector3.new(v172.X,v0,v172.Z);v180=(v179-v175.Position).Magnitude;v181=(v180/v177) + 0.4 ;while v139 and v174 and v175 and (v176.Health>(1329 -(797 + 532)))  do v144(v174,false);local v249=Vector3.new(v175.Position.X,v0,v175.Position.Z);if v140 then v140.CFrame=CFrame.new(v249.X,v0-(3.5 + 0) ,v249.Z);end local v250=(v179-v249).Magnitude;if ((v250<=5) or ((tick() -v178)>v181)) then break;end local v251=(v179-v249).Unit;v141.Velocity=Vector3.new(v251.X * v177 ,0 + 0 ,v251.Z * v177 );task.wait(0.015);end if v141 then local v263=0 -0 ;while true do if (v263==(1202 -(373 + 829))) then v141:Destroy();v141=nil;break;end end end if v142 then local v264=0;local v265;while true do if (v264==(731 -(476 + 255))) then v265=1130 -(369 + 761) ;while true do if (v265==0) then v142:Destroy();v142=nil;break;end end break;end end end v173=5;end if (v173==(0 + 0)) then v174=v12.Character;if  not v174 then return;end v175=v174:FindFirstChild("HumanoidRootPart");v176=v174:FindFirstChildOfClass("Humanoid");if ( not v175 or  not v176) then return;end v140=Instance.new("Part");v173=1;end if (v173==(1 -0)) then v140.Name="AntiCheatSafetyPlatform";v140.Size=Vector3.new(14 -6 ,1,8);v140.Anchored=true;v140.CanCollide=true;v140.Transparency=1;v140.CFrame=CFrame.new(v175.Position.X,v0-(241.5 -(64 + 174)) ,v175.Position.Z);v173=1 + 1 ;end end end local function v148(v182,v183) if v139 then v146();end local v184=v12.Character;if  not v184 then return;end local v185=v184:FindFirstChild("HumanoidRootPart");local v186=v184:FindFirstChildOfClass("Humanoid");if ( not v185 or  not v186 or (v186.Health<=(0 -0))) then return;end v139=true;v144(v184,false);if v183 then local v219=336 -(144 + 192) ;while true do if (v219==1) then v35.Color=Color3.fromRGB(255,285 -(42 + 174) ,0 + 0 );break;end if (v219==(0 + 0)) then v19.Text="STOP";v19.TextColor3=Color3.fromRGB(109 + 146 ,69,1504 -(363 + 1141) );v219=1;end end end v185.AssemblyLinearVelocity=Vector3.zero;v185.CFrame=CFrame.new(v185.Position.X,v0,v185.Position.Z);local v190=v185.Position;local v191=(v190.X>=v3) and (v190.X<=v4) and (v190.Z>=v5) and (v190.Z<=v6) ;if v191 then v147(v2);end if v139 then v147(v182);end v140=Instance.new("Part");v140.Name="AntiCheatSafetyPlatform";v140.Size=Vector3.new(1588 -(1183 + 397) ,1,24 -16 );v140.Anchored=true;v140.CanCollide=true;v140.Transparency=1;v140.CFrame=CFrame.new(v182.X,v0-(3.5 + 0) ,v182.Z);v140.Parent=workspace;local v199=CFrame.new(v182);local v200=tick() + 1 + 0 ;while v139 and (tick()<v200) and v184 and v185 and (v186.Health>(1975 -(1913 + 62)))  do local v209=0;while true do if (v209==(0 + 0)) then v144(v184,false);v185.AssemblyLinearVelocity=Vector3.zero;v209=1;end if (v209==(5 -3)) then if v140 then v140.CFrame=v199-Vector3.new(0,1936.5 -(565 + 1368) ,0) ;end v11.Heartbeat:Wait();break;end if (v209==(3 -2)) then v185.AssemblyAngularVelocity=Vector3.zero;v185.CFrame=v199;v209=2;end end end v146();end v19.MouseButton1Click:Connect(function() if v139 then v146();else v148(v1,true);end end);for v201,v202 in ipairs(v7) do local v203=1661 -(1477 + 184) ;local v204;local v205;local v206;while true do if (v203==2) then local v239=0 -0 ;while true do if (v239==(0 + 0)) then v204.TextSize=870 -(564 + 292) ;v204.Font=Enum.Font.GothamSemibold;v239=1 -0 ;end if (v239==(2 -1)) then v204.Parent=v114;v203=3;break;end end end if (v203==5) then v206.Parent=v204;v204.MouseButton1Click:Connect(function() v148(v202.Position,false);end);break;end if (v203==(307 -(244 + 60))) then v205=Instance.new("UICorner");v205.CornerRadius=UDim.new(0 + 0 ,484 -(41 + 435) );v205.Parent=v204;v203=4;end if (v203==(1005 -(938 + 63))) then local v243=0 + 0 ;while true do if (v243==(1125 -(936 + 189))) then v206=Instance.new("UIStroke");v206.Color=Color3.fromRGB(0 + 0 ,1804 -(1565 + 48) ,158 + 97 );v243=1139 -(782 + 356) ;end if (v243==(268 -(176 + 91))) then v206.Thickness=2.5 -1 ;v203=7 -2 ;break;end end end if (v203==0) then local v244=1092 -(975 + 117) ;while true do if (v244==(1876 -(157 + 1718))) then v204.Size=UDim2.new(0,147 + 33 ,0 -0 ,119 -84 );v203=1;break;end if (v244==0) then v204=Instance.new("TextButton");v204.Name=v202.Name   .. "Button" ;v244=1019 -(697 + 321) ;end end end if (v203==1) then local v245=0 -0 ;while true do if (v245==(1 -0)) then v204.TextColor3=Color3.fromRGB(587 -332 ,100 + 155 ,477 -222 );v203=2;break;end if ((0 -0)==v245) then v204.BackgroundColor3=Color3.fromRGB(30,1257 -(322 + 905) ,641 -(602 + 9) );v204.Text=v202.Name;v245=1190 -(449 + 740) ;end end end end end v114.CanvasSize=UDim2.new(872 -(826 + 46) ,0,0,( #v7 * 41) + (967 -(245 + 702)) );
+local TARGET_Y = 93.00
+local FINAL_SAFE_ZONE = Vector3.new(549.39, TARGET_Y, -365.50)
+local SAFE_ESCAPE_POS = Vector3.new(547.54, TARGET_Y, -364.99)
+
+-- Tọa độ giới hạn 4 góc của Safe Zone (xử lý ngầm)
+local SAFE_MIN_X = 365.20
+local SAFE_MAX_X = 552.00
+local SAFE_MIN_Z = -582.00
+local SAFE_MAX_Z = -146.00
+
+local ZONES = {
+{Name = "Lake", Position = Vector3.new(743.59, TARGET_Y, -396.95)},
+{Name = "Desert", Position = Vector3.new(949.93, TARGET_Y, -333.33)},
+{Name = "Jungle", Position = Vector3.new(1190.65, TARGET_Y, -397.29)},
+{Name = "Snow", Position = Vector3.new(1490.13, TARGET_Y, -326.33)},
+{Name = "Volcano", Position = Vector3.new(1883.90, TARGET_Y, -383.63)},
+{Name = "Abyss Ocean", Position = Vector3.new(2280.29, TARGET_Y, -335.18)},
+{Name = "Prehistoric", Position = Vector3.new(2816.63, TARGET_Y, -388.11)},
+{Name = "Cosmic", Position = Vector3.new(3391.44, TARGET_Y, -335.10)},
+{Name = "Cherry Blossom", Position = Vector3.new(4029.82, TARGET_Y, -388.07)},
+{Name = "Titan Temple", Position = Vector3.new(4797.82, TARGET_Y, -339.47)},
+{Name = "Angels/Demons", Position = Vector3.new(5658.86, TARGET_Y, -340.98)},
+}
+
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+local function modifyPrompt(prompt)
+if prompt:IsA("ProximityPrompt") then
+prompt.HoldDuration = 0
+end
+end
+
+for _, obj in ipairs(Workspace:GetDescendants()) do
+modifyPrompt(obj)
+end
+Workspace.DescendantAdded:Connect(modifyPrompt)
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "UnifiedScriptGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+-- ==================== NÚT STEAL ====================
+local StealButton = Instance.new("TextButton")
+StealButton.Name = "StealButton"
+StealButton.Size = UDim2.new(0, 160, 0, 50)
+StealButton.Position = UDim2.new(0.82, 0, 0.05, 0) -- Vị trí góc trên bên phải như hình
+StealButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+StealButton.Text = "STEAL"
+StealButton.TextColor3 = Color3.fromRGB(0, 191, 255)
+StealButton.TextSize = 22
+StealButton.Font = Enum.Font.GothamBold
+StealButton.Active = true
+StealButton.Draggable = true
+StealButton.Parent = ScreenGui
+
+local StealCorner = Instance.new("UICorner")
+StealCorner.CornerRadius = UDim.new(0, 15)
+StealCorner.Parent = StealButton
+
+local StealStroke = Instance.new("UIStroke")
+StealStroke.Color = Color3.fromRGB(0, 191, 255)
+StealStroke.Thickness = 3
+StealStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+StealStroke.Parent = StealButton
+
+StealButton.MouseEnter:Connect(function()
+TweenService:Create(StealStroke, TweenInfo.new(0.2), {Thickness = 5, Color = Color3.fromRGB(0, 255, 255)}):Play()
+TweenService:Create(StealButton, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(0, 255, 255)}):Play()
+end)
+
+StealButton.MouseLeave:Connect(function()
+TweenService:Create(StealStroke, TweenInfo.new(0.2), {Thickness = 3, Color = Color3.fromRGB(0, 191, 255)}):Play()
+TweenService:Create(StealButton, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(0, 191, 255)}):Play()
+end)
+
+-- ==================== NÚT MỞ/ĐÓNG MENU TELEPORT ====================
+local ToggleMenuButton = Instance.new("TextButton")
+ToggleMenuButton.Name = "ToggleMenuButton"
+ToggleMenuButton.Size = UDim2.new(0, 160, 0, 40)
+ToggleMenuButton.Position = UDim2.new(0.82, 0, 0.18, 0) -- Nằm ngay dưới nút Steal
+ToggleMenuButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+ToggleMenuButton.Text = " "
+ToggleMenuButton.TextColor3 = Color3.fromRGB(0, 191, 255)
+ToggleMenuButton.TextSize = 16
+ToggleMenuButton.Font = Enum.Font.GothamBold
+ToggleMenuButton.Active = true
+ToggleMenuButton.Draggable = true
+ToggleMenuButton.Parent = ScreenGui
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 10)
+ToggleCorner.Parent = ToggleMenuButton
+
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Color = Color3.fromRGB(0, 191, 255)
+ToggleStroke.Thickness = 2
+ToggleStroke.Parent = ToggleMenuButton
+
+-- ==================== BẢNG MENU TELEPORT ZONES ====================
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 200, 0, 390)
+MainFrame.Position = UDim2.new(0.82, 0, 0.28, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = false -- Mặc định ẩn, bấm nút Toggle để bật tắt
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(0, 191, 255)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
+
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 40)
+TopBar.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 12)
+TopBarCorner.Parent = TopBar
+
+local TopBarFix = Instance.new("Frame")
+TopBarFix.Size = UDim2.new(1, 0, 0, 10)
+TopBarFix.Position = UDim2.new(0, 0, 1, -10)
+TopBarFix.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+TopBarFix.BorderSizePixel = 0
+TopBarFix.Parent = TopBar
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -45, 1, 0)
+TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "By GALAXY"
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.TextColor3 = Color3.fromRGB(0, 191, 255)
+TitleLabel.TextSize = 14
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Parent = TopBar
+
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
+MinimizeButton.Position = UDim2.new(1, -35, 0.5, -15)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MinimizeButton.Text = "-"
+MinimizeButton.TextColor3 = Color3.fromRGB(0, 191, 255)
+MinimizeButton.TextSize = 18
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.Parent = TopBar
+
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 6)
+MinCorner.Parent = MinimizeButton
+
+local ContentScroll = Instance.new("ScrollingFrame")
+ContentScroll.Name = "ContentScroll"
+ContentScroll.Size = UDim2.new(1, 0, 1, -40)
+ContentScroll.Position = UDim2.new(0, 0, 0, 40)
+ContentScroll.BackgroundTransparency = 1
+ContentScroll.BorderSizePixel = 0
+ContentScroll.ClipsDescendants = true
+ContentScroll.ScrollBarThickness = 6
+ContentScroll.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 6)
+UIListLayout.Parent = ContentScroll
+
+local UIPadding = Instance.new("UIPadding")
+UIPadding.PaddingTop = UDim.new(0, 10)
+UIPadding.PaddingBottom = UDim.new(0, 10)
+UIPadding.Parent = ContentScroll
+
+-- Sự kiện ẩn hiện menu Teleport
+ToggleMenuButton.MouseButton1Click:Connect(function()
+MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- Kéo thả menu qua TopBar
+local dragging, dragInput, dragStart, startPos
+TopBar.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+dragging = true
+dragStart = input.Position
+startPos = MainFrame.Position
+input.Changed:Connect(function()
+if input.UserInputState == Enum.UserInputState.End then
+dragging = false
+end
+end)
+end
+end)
+
+TopBar.InputChanged:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+dragInput = input
+end
+end)
+
+RunService.RenderStepped:Connect(function()
+if dragging and dragInput then
+local delta = dragInput.Position - dragStart
+MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+end)
+
+local isMinimized = false
+MinimizeButton.MouseButton1Click:Connect(function()
+isMinimized = not isMinimized
+if isMinimized then
+MinimizeButton.Text = "+"
+TweenService:Create(MainFrame, TweenInfo.new(0.2), {Size = UDim2.new(0, 200, 0, 40)}):Play()
+else
+MinimizeButton.Text = "-"
+TweenService:Create(MainFrame, TweenInfo.new(0.2), {Size = UDim2.new(0, 200, 0, 390)}):Play()
+end
+end)
+
+local isTraveling = false
+local groundPart = nil
+local activeBV = nil
+local activeBG = nil
+
+local function isHoldingEgg(character)
+return character:FindFirstChildOfClass("Tool") ~= nil
+end
+
+local function setAnimationsEnabled(character, enabled)
+if not character then return end
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+if not humanoid then return end
+
+local animator = humanoid:FindFirstChildOfClass("Animator")
+if animator then
+for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+if enabled then
+track:AdjustSpeed(1)
+else
+track:Stop(0)
+end
+end
+end
+humanoid.WalkSpeed = enabled and 16 or 0
+end
+
+local function unblockHumanoid(humanoid)
+if not humanoid then return end
+if humanoid.PlatformStand then humanoid.PlatformStand = false end
+if humanoid.Sit then humanoid.Sit = false end
+pcall(function()
+humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+end)
+end
+
+local function stopTravel()
+isTraveling = false
+if groundPart then groundPart:Destroy(); groundPart = nil end
+if activeBV then activeBV:Destroy(); activeBV = nil end
+if activeBG then activeBG:Destroy(); activeBG = nil end
+
+StealButton.Text = "STEAL"
+StealButton.TextColor3 = Color3.fromRGB(0, 191, 255)
+StealStroke.Color = Color3.fromRGB(0, 191, 255)
+
+local character = LocalPlayer.Character
+if character then
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+if humanoid then
+unblockHumanoid(humanoid)
+humanoid:ChangeState(Enum.HumanoidStateType.Running)
+end
+setAnimationsEnabled(character, true)
+end
+end
+
+-- Vòng lặp bảo vệ trạng thái nhân vật
+task.spawn(function()
+while true do
+task.wait(0.05)
+local character = LocalPlayer.Character
+if character then
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+if humanoid and humanoid.Health > 0 and not isTraveling then
+if isHoldingEgg(character) then
+humanoid.WalkSpeed = 16
+end
+unblockHumanoid(humanoid)
+if humanoid:GetState() ~= Enum.HumanoidStateType.Running and not humanoid.Sit then
+pcall(function()
+humanoid:ChangeState(Enum.HumanoidStateType.Running)
+end)
+end
+end
+end
+end
+end)
+
+-- Hàm bay chuẩn hệ thống
+local function executeFlight(destinationPos)
+local character = LocalPlayer.Character
+if not character then return end
+local hrp = character:FindFirstChild("HumanoidRootPart")
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+if not hrp or not humanoid then return end
+
+groundPart = Instance.new("Part")
+groundPart.Name = "AntiCheatSafetyPlatform"
+groundPart.Size = Vector3.new(8, 1, 8)
+groundPart.Anchored = true
+groundPart.CanCollide = true
+groundPart.Transparency = 1
+groundPart.CFrame = CFrame.new(hrp.Position.X, TARGET_Y - 3.5, hrp.Position.Z)
+groundPart.Parent = workspace
+
+activeBV = Instance.new("BodyVelocity")
+activeBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+activeBV.Velocity = Vector3.zero
+activeBV.Parent = hrp
+
+activeBG = Instance.new("BodyGyro")
+activeBG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+activeBG.P = 90000
+activeBG.CFrame = CFrame.lookAt(hrp.Position, destinationPos)
+activeBG.Parent = hrp
+
+local moveSpeed = 300
+local startTime = tick()
+local targetFlat = Vector3.new(destinationPos.X, TARGET_Y, destinationPos.Z)
+local distance = (targetFlat - hrp.Position).Magnitude
+local estimatedTime = (distance / moveSpeed) + 0.4
+
+while isTraveling and character and hrp and humanoid.Health > 0 do
+setAnimationsEnabled(character, false)
+
+local currentFlatPos = Vector3.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
+
+if groundPart then
+groundPart.CFrame = CFrame.new(currentFlatPos.X, TARGET_Y - 3.5, currentFlatPos.Z)
+end
+
+local currentDist = (targetFlat - currentFlatPos).Magnitude
+if currentDist <= 5 or (tick() - startTime) > estimatedTime then
+break
+end
+
+local currentDir = (targetFlat - currentFlatPos).Unit
+activeBV.Velocity = Vector3.new(currentDir.X * moveSpeed, 0, currentDir.Z * moveSpeed)
+
+task.wait(0.015)
+end
+
+if activeBV then activeBV:Destroy(); activeBV = nil end
+if activeBG then activeBG:Destroy(); activeBG = nil end
+if groundPart then groundPart:Destroy(); groundPart = nil end
+end
+
+-- Hàm thực hiện hành trình chung cho cả nút Steal và Teleport Zones
+local function moveToTarget(targetPosition, isStealAction)
+if isTraveling then
+stopTravel()
+end
+
+local character = LocalPlayer.Character
+if not character then return end
+
+local hrp = character:FindFirstChild("HumanoidRootPart")
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+if not hrp or not humanoid or humanoid.Health <= 0 then return end
+
+isTraveling = true
+setAnimationsEnabled(character, false)
+
+if isStealAction then
+StealButton.Text = "STOP"
+StealButton.TextColor3 = Color3.fromRGB(255, 69, 0)
+StealStroke.Color = Color3.fromRGB(255, 69, 0)
+end
+
+hrp.AssemblyLinearVelocity = Vector3.zero
+hrp.CFrame = CFrame.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
+
+local currentPos = hrp.Position
+local isInSafeZone = (currentPos.X >= SAFE_MIN_X and currentPos.X <= SAFE_MAX_X) and
+(currentPos.Z >= SAFE_MIN_Z and currentPos.Z <= SAFE_MAX_Z)
+
+if isInSafeZone then
+executeFlight(SAFE_ESCAPE_POS)
+end
+
+if isTraveling then
+executeFlight(targetPosition)
+end
+
+groundPart = Instance.new("Part")
+groundPart.Name = "AntiCheatSafetyPlatform"
+groundPart.Size = Vector3.new(8, 1, 8)
+groundPart.Anchored = true
+groundPart.CanCollide = true
+groundPart.Transparency = 1
+groundPart.CFrame = CFrame.new(targetPosition.X, TARGET_Y - 3.5, targetPosition.Z)
+groundPart.Parent = workspace
+
+local finalCFrame = CFrame.new(targetPosition)
+local tpEndTime = tick() + 1.0 -- Khóa loop TP chuẩn 1 giây
+
+while isTraveling and tick() < tpEndTime and character and hrp and humanoid.Health > 0 do
+setAnimationsEnabled(character, false)
+hrp.AssemblyLinearVelocity = Vector3.zero
+hrp.AssemblyAngularVelocity = Vector3.zero
+hrp.CFrame = finalCFrame
+
+if groundPart then
+groundPart.CFrame = finalCFrame - Vector3.new(0, 3.5, 0)
+end
+RunService.Heartbeat:Wait()
+end
+
+stopTravel()
+end
+
+-- Nút Steal sự kiện
+StealButton.MouseButton1Click:Connect(function()
+if isTraveling then
+stopTravel()
+else
+moveToTarget(FINAL_SAFE_ZONE, true)
+end
+end)
+
+-- Tạo các nút Teleport Zones trong menu
+for _, zone in ipairs(ZONES) do
+local ZoneButton = Instance.new("TextButton")
+ZoneButton.Name = zone.Name .. "Button"
+ZoneButton.Size = UDim2.new(0, 180, 0, 35)
+ZoneButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ZoneButton.Text = zone.Name
+ZoneButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ZoneButton.TextSize = 14
+ZoneButton.Font = Enum.Font.GothamSemibold
+ZoneButton.Parent = ContentScroll
+
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.CornerRadius = UDim.new(0, 8)
+ButtonCorner.Parent = ZoneButton
+
+local ButtonStroke = Instance.new("UIStroke")
+ButtonStroke.Color = Color3.fromRGB(0, 191, 255)
+ButtonStroke.Thickness = 1.5
+ButtonStroke.Parent = ZoneButton
+
+ZoneButton.MouseButton1Click:Connect(function()
+moveToTarget(zone.Position, false)
+end)
+end
+
+ContentScroll.CanvasSize = UDim2.new(0, 0, 0, (#ZONES * 41) + 20)
+
