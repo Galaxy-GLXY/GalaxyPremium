@@ -289,7 +289,7 @@ local function executeFlight(destinationPos)
     activeBG.CFrame = CFrame.lookAt(hrp.Position, destinationPos)
     activeBG.Parent = hrp
 
-    local moveSpeed = 282
+    local moveSpeed = 278
     local startTime = tick()
     local targetFlat = Vector3.new(destinationPos.X, TARGET_Y, destinationPos.Z)
     local distance = (targetFlat - hrp.Position).Magnitude
@@ -374,7 +374,7 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
         groundPart.Parent = workspace
 
         local finalCFrame = CFrame.new(targetPosition)
-        local tpEndTime = tick() + 1.0
+        local tpEndTime = tick() + 0.3 -- Đã giảm thời gian khóa loop TP xuống 0.3 giây
 
         while isTraveling and tick() < tpEndTime and character and hrp and humanoid.Health > 0 do
             setAnimationsEnabled(character, false)
