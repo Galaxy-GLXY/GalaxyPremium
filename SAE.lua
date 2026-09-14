@@ -2,7 +2,6 @@ local TARGET_Y = 93.00
 local FINAL_SAFE_ZONE = Vector3.new(549.39, TARGET_Y, -365.50)
 local SAFE_ESCAPE_POS = Vector3.new(547.54, TARGET_Y, -364.99)
 
--- Tọa độ giới hạn 4 góc của Safe Zone (xử lý ngầm)
 local SAFE_MIN_X = 365.20
 local SAFE_MAX_X = 552.00
 local SAFE_MIN_Z = -582.00
@@ -29,12 +28,10 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- ==================== CÀI ĐẶT TỐC ĐỘ 273 STUD/S ====================
 local SPEED_BYPASS_ENABLED = true
-local CUSTOM_SPEED = 273.0         -- Tốc độ chạy 273 Stud/s
-local NO_ANIM_ENABLED = true       -- Tắt animation mặc định để mượt mà
+local CUSTOM_SPEED = 275.0
+local NO_ANIM_ENABLED = true
 
--- ==================== TÍNH NĂNG INSTANT PROXIMITY PROMPT ====================
 local function modifyPrompt(prompt)
     if prompt:IsA("ProximityPrompt") then
         prompt.HoldDuration = 0
@@ -52,7 +49,6 @@ ScreenGui.Name = "UnifiedScriptGui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- ==================== BẢNG MENU TELEPORT ZONES ====================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 200, 0, 390)
@@ -136,7 +132,6 @@ UIPadding.PaddingTop = UDim.new(0, 10)
 UIPadding.PaddingBottom = UDim.new(0, 10)
 UIPadding.Parent = ContentScroll
 
--- Kéo thả menu qua TopBar
 local dragging, dragInput, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -246,7 +241,6 @@ local function stopTravel()
     end
 end
 
--- ==================== TÍNH NĂNG TỐC ĐỘ 273 & TRIỆT TIÊU LỰC ĐÁNH ====================
 local function setupCharacterFeatures(character)
     if not character then return end
     local hrp = character:WaitForChild("HumanoidRootPart", 5)
@@ -271,10 +265,8 @@ local function setupCharacterFeatures(character)
         end
     end)
 
-    -- Vòng lặp RenderStepped: Tốc độ 273, triệt tiêu lực đẩy = 0 và tự động xoay hướng mượt mà
     RunService.RenderStepped:Connect(function(dt)
         if character and character.Parent and humanoid.Health > 0 and not isTraveling then
-            -- TRIỆT TIÊU HOÀN TOÀN LỰC ĐÁNH (Lực đẩy ngang = 0 tuyệt đối)
             hrp.AssemblyLinearVelocity = Vector3.new(0, hrp.AssemblyLinearVelocity.Y, 0)
             hrp.AssemblyAngularVelocity = Vector3.zero
 
@@ -282,10 +274,8 @@ local function setupCharacterFeatures(character)
                 humanoid.WalkSpeed = 0
                 local moveDir = humanoid.MoveDirection
                 if moveDir.Magnitude > 0 then
-                    -- Dịch chuyển siêu tốc 273 Stud/s theo hướng di chuyển
                     hrp.CFrame = hrp.CFrame + (moveDir * (CUSTOM_SPEED * dt))
                     
-                    -- Tự động xoay người mượt mà theo hướng chạy
                     local targetLookAt = Vector3.new(moveDir.X, 0, moveDir.Z)
                     if targetLookAt.Magnitude > 0 then
                         local currentCF = hrp.CFrame
@@ -303,7 +293,6 @@ if LocalPlayer.Character then
 end
 LocalPlayer.CharacterAdded:Connect(setupCharacterFeatures)
 
--- Vòng lặp bảo vệ trạng thái nhân vật chung
 task.spawn(function()
     while true do
         task.wait(0.05)
@@ -322,7 +311,6 @@ task.spawn(function()
     end
 end)
 
--- Hàm bay chuẩn hệ thống (Dùng khi bấm Teleport)
 local function executeFlight(destinationPos)
     local character = LocalPlayer.Character
     if not character then return end
@@ -381,7 +369,6 @@ local function executeFlight(destinationPos)
     if groundPart then groundPart:Destroy(); groundPart = nil end
 end
 
--- Hàm thực hiện hành trình đến vùng chọn
 local function moveToTarget(targetPosition, clickedButton, zoneName)
     if isTraveling then
         stopTravel()
@@ -453,7 +440,6 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
     stopTravel()
 end
 
--- Tạo các nút Teleport Zones trong menu
 for _, zone in ipairs(ZONES) do
     local ZoneButton = Instance.new("TextButton")
     ZoneButton.Name = zone.Name .. "Button"
