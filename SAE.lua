@@ -25,15 +25,14 @@ local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- ==================== CÀI ĐẶT TỐC ĐỘ & NO ANIM ====================
+-- ==================== CÀI ĐẶT TỐC ĐỘ 273 STUD/S ====================
 local SPEED_BYPASS_ENABLED = true
-local CUSTOM_SPEED = 275.0         -- Tốc độ chạy siêu tốc
-local NO_ANIM_ENABLED = true       -- Tắt animation mặc định để không bị giật
+local CUSTOM_SPEED = 273.0         -- Tốc độ chạy 273 Stud/s
+local NO_ANIM_ENABLED = true       -- Tắt animation mặc định để mượt mà
 
 -- ==================== TÍNH NĂNG INSTANT PROXIMITY PROMPT ====================
 local function modifyPrompt(prompt)
@@ -247,9 +246,7 @@ local function stopTravel()
     end
 end
 
--- ==================== TÍNH NĂNG ANTI-HIT, NO ANIM & SPEED BYPASS ====================
-local AntiHitEnabled = true
-
+-- ==================== TÍNH NĂNG TỐC ĐỘ 273 & TRIỆT TIÊU LỰC ĐÁNH ====================
 local function setupCharacterFeatures(character)
     if not character then return end
     local hrp = character:WaitForChild("HumanoidRootPart", 5)
@@ -263,42 +260,37 @@ local function setupCharacterFeatures(character)
     end
 
     humanoid.StateChanged:Connect(function(oldState, newState)
-        if not AntiHitEnabled or isTraveling then return end
-        
+        if isTraveling then return end
         if newState == Enum.HumanoidStateType.Physics or 
            newState == Enum.HumanoidStateType.Ragdoll or 
            newState == Enum.HumanoidStateType.FallingDown or
            newState == Enum.HumanoidStateType.Flying then
-            
             pcall(function()
                 humanoid:ChangeState(Enum.HumanoidStateType.Running)
             end)
         end
     end)
 
-    -- Vòng lặp RenderStepped: Xử lý di chuyển, chống văng đòn đánh và tự động xoay hướng theo chiều chạy
+    -- Vòng lặp RenderStepped: Tốc độ 273, triệt tiêu lực đẩy = 0 và tự động xoay hướng mượt mà
     RunService.RenderStepped:Connect(function(dt)
         if character and character.Parent and humanoid.Health > 0 and not isTraveling then
-            if AntiHitEnabled then
-                local currentVelocity = hrp.AssemblyLinearVelocity
-                if (currentVelocity.X^2 + currentVelocity.Z^2) > (30 * 30) then
-                    hrp.AssemblyLinearVelocity = Vector3.new(0, currentVelocity.Y, 0)
-                end
-            end
+            -- TRIỆT TIÊU HOÀN TOÀN LỰC ĐÁNH (Lực đẩy ngang = 0 tuyệt đối)
+            hrp.AssemblyLinearVelocity = Vector3.new(0, hrp.AssemblyLinearVelocity.Y, 0)
+            hrp.AssemblyAngularVelocity = Vector3.zero
 
             if SPEED_BYPASS_ENABLED then
                 humanoid.WalkSpeed = 0
                 local moveDir = humanoid.MoveDirection
                 if moveDir.Magnitude > 0 then
-                    -- Dịch chuyển vị trí siêu tốc theo hướng di chuyển
+                    -- Dịch chuyển siêu tốc 273 Stud/s theo hướng di chuyển
                     hrp.CFrame = hrp.CFrame + (moveDir * (CUSTOM_SPEED * dt))
                     
-                    -- Tự động xoay mượt mà nhân vật theo hướng đang chạy
+                    -- Tự động xoay người mượt mà theo hướng chạy
                     local targetLookAt = Vector3.new(moveDir.X, 0, moveDir.Z)
                     if targetLookAt.Magnitude > 0 then
                         local currentCF = hrp.CFrame
                         local newCF = CFrame.new(currentCF.Position, currentCF.Position + targetLookAt)
-                        hrp.CFrame = currentCF:Lerp(newCF, 0.2) -- Xoay mượt mà không bị khựng
+                        hrp.CFrame = currentCF:Lerp(newCF, 0.3)
                     end
                 end
             end
@@ -330,7 +322,7 @@ task.spawn(function()
     end
 end)
 
--- Hàm bay chuẩn hệ thống
+-- Hàm bay chuẩn hệ thống (Dùng khi bấm Teleport)
 local function executeFlight(destinationPos)
     local character = LocalPlayer.Character
     if not character then return end
