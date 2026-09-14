@@ -25,14 +25,20 @@ local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+-- ==================== CÀI ĐẶT TỐC ĐỘ & NO ANIM ====================
+local SPEED_BYPASS_ENABLED = true
+local CUSTOM_SPEED = 275.0         -- Tốc độ chạy siêu tốc
+local NO_ANIM_ENABLED = true       -- Tắt animation mặc định để không bị giật
+
 -- ==================== TÍNH NĂNG INSTANT PROXIMITY PROMPT ====================
 local function modifyPrompt(prompt)
     if prompt:IsA("ProximityPrompt") then
-        prompt.HoldDuration = 0 -- Chuyển thời gian đè về 0 giây
+        prompt.HoldDuration = 0
     end
 end
 
@@ -197,7 +203,9 @@ local function setAnimationsEnabled(character, enabled)
             end
         end
     end
-    humanoid.WalkSpeed = enabled and 16 or 0
+    if not SPEED_BYPASS_ENABLED then
+        humanoid.WalkSpeed = enabled and 16 or 0
+    end
 end
 
 local function unblockHumanoid(humanoid)
@@ -239,7 +247,71 @@ local function stopTravel()
     end
 end
 
--- Vòng lặp bảo vệ trạng thái nhân vật
+-- ==================== TÍNH NĂNG ANTI-HIT, NO ANIM & SPEED BYPASS ====================
+local AntiHitEnabled = true
+
+local function setupCharacterFeatures(character)
+    if not character then return end
+    local hrp = character:WaitForChild("HumanoidRootPart", 5)
+    local humanoid = character:WaitForChild("Humanoid", 5)
+    local animateScript = character:WaitForChild("Animate", 5)
+    
+    if not hrp or not humanoid then return end
+
+    if NO_ANIM_ENABLED and animateScript and animateScript:IsA("LocalScript") then
+        animateScript.Disabled = true
+    end
+
+    humanoid.StateChanged:Connect(function(oldState, newState)
+        if not AntiHitEnabled or isTraveling then return end
+        
+        if newState == Enum.HumanoidStateType.Physics or 
+           newState == Enum.HumanoidStateType.Ragdoll or 
+           newState == Enum.HumanoidStateType.FallingDown or
+           newState == Enum.HumanoidStateType.Flying then
+            
+            pcall(function()
+                humanoid:ChangeState(Enum.HumanoidStateType.Running)
+            end)
+        end
+    end)
+
+    -- Vòng lặp RenderStepped: Xử lý di chuyển, chống văng đòn đánh và tự động xoay hướng theo chiều chạy
+    RunService.RenderStepped:Connect(function(dt)
+        if character and character.Parent and humanoid.Health > 0 and not isTraveling then
+            if AntiHitEnabled then
+                local currentVelocity = hrp.AssemblyLinearVelocity
+                if (currentVelocity.X^2 + currentVelocity.Z^2) > (30 * 30) then
+                    hrp.AssemblyLinearVelocity = Vector3.new(0, currentVelocity.Y, 0)
+                end
+            end
+
+            if SPEED_BYPASS_ENABLED then
+                humanoid.WalkSpeed = 0
+                local moveDir = humanoid.MoveDirection
+                if moveDir.Magnitude > 0 then
+                    -- Dịch chuyển vị trí siêu tốc theo hướng di chuyển
+                    hrp.CFrame = hrp.CFrame + (moveDir * (CUSTOM_SPEED * dt))
+                    
+                    -- Tự động xoay mượt mà nhân vật theo hướng đang chạy
+                    local targetLookAt = Vector3.new(moveDir.X, 0, moveDir.Z)
+                    if targetLookAt.Magnitude > 0 then
+                        local currentCF = hrp.CFrame
+                        local newCF = CFrame.new(currentCF.Position, currentCF.Position + targetLookAt)
+                        hrp.CFrame = currentCF:Lerp(newCF, 0.2) -- Xoay mượt mà không bị khựng
+                    end
+                end
+            end
+        end
+    end)
+end
+
+if LocalPlayer.Character then
+    setupCharacterFeatures(LocalPlayer.Character)
+end
+LocalPlayer.CharacterAdded:Connect(setupCharacterFeatures)
+
+-- Vòng lặp bảo vệ trạng thái nhân vật chung
 task.spawn(function()
     while true do
         task.wait(0.05)
@@ -247,9 +319,6 @@ task.spawn(function()
         if character then
             local humanoid = character:FindFirstChildOfClass("Humanoid")
             if humanoid and humanoid.Health > 0 and not isTraveling then
-                if isHoldingEgg(character) then
-                    humanoid.WalkSpeed = 16
-                end
                 unblockHumanoid(humanoid)
                 if humanoid:GetState() ~= Enum.HumanoidStateType.Running and not humanoid.Sit then
                     pcall(function()
@@ -289,7 +358,7 @@ local function executeFlight(destinationPos)
     activeBG.CFrame = CFrame.lookAt(hrp.Position, destinationPos)
     activeBG.Parent = hrp
 
-    local moveSpeed = 278
+    local moveSpeed = 277
     local startTime = tick()
     local targetFlat = Vector3.new(destinationPos.X, TARGET_Y, destinationPos.Z)
     local distance = (targetFlat - hrp.Position).Magnitude
@@ -374,7 +443,7 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
         groundPart.Parent = workspace
 
         local finalCFrame = CFrame.new(targetPosition)
-        local tpEndTime = tick() + 0.3 -- Đã giảm thời gian khóa loop TP xuống 0.3 giây
+        local tpEndTime = tick() + 0.3
 
         while isTraveling and tick() < tpEndTime and character and hrp and humanoid.Health > 0 do
             setAnimationsEnabled(character, false)
