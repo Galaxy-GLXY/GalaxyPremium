@@ -1,4 +1,4 @@
-local TARGET_Y = 93.00
+local TARGET_Y = 85.00
 local FINAL_SAFE_ZONE = Vector3.new(549.39, TARGET_Y, -365.50)
 local SAFE_ESCAPE_POS = Vector3.new(547.54, TARGET_Y, -364.99)
 
