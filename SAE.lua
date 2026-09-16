@@ -1,4 +1,4 @@
-local TARGET_Y = 85.00
+local TARGET_Y = 75.00
 local FINAL_SAFE_ZONE = Vector3.new(549.39, TARGET_Y, -365.50)
 local SAFE_ESCAPE_POS = Vector3.new(547.54, TARGET_Y, -364.99)
 
@@ -29,8 +29,10 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local SPEED_BYPASS_ENABLED = true
-local CUSTOM_SPEED = 275.0
-local NO_ANIM_ENABLED = true
+local CUSTOM_SPEED = 270.0
+
+-- Animation ID chuẩn của Roblox (Animation 1)
+local TARGET_ANIMATION_ID = "rbxassetid://180435571"
 
 local function modifyPrompt(prompt)
     if prompt:IsA("ProximityPrompt") then
@@ -89,7 +91,7 @@ local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Size = UDim2.new(1, -45, 1, 0)
 TitleLabel.Position = UDim2.new(0, 10, 0, 0)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "          By GALAXY"
+TitleLabel.Text = "By GALAXY"
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.TextColor3 = Color3.fromRGB(0, 191, 255)
 TitleLabel.TextSize = 14
@@ -172,33 +174,39 @@ MinimizeButton.MouseButton1Click:Connect(function()
 end)
 
 local isTraveling = false
-local groundPart = nil
+local attachedPart = nil
 local activeBV = nil
 local activeBG = nil
 local activeZoneButton = nil
 local originalButtonText = ""
+local currentAnimTrack = nil
 
-local function isHoldingEgg(character)
-    return character:FindFirstChildOfClass("Tool") ~= nil
+local function setAnimateScriptEnabled(character, enabled)
+    local animateScript = character:FindFirstChild("Animate")
+    if animateScript and animateScript:IsA("LocalScript") then
+        animateScript.Disabled = not enabled
+    end
 end
 
-local function setAnimationsEnabled(character, enabled)
-    if not character then return end
+local function forceAnimation(character)
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not humanoid then return end
+    local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
     
-    local animator = humanoid:FindFirstChildOfClass("Animator")
-    if animator then
+    -- Tắt script chạy animation mặc định để nhân vật đứng bất động như tượng
+    setAnimateScriptEnabled(character, false)
+    
+    if not currentAnimTrack or not currentAnimTrack.IsPlaying then
         for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
-            if enabled then
-                track:AdjustSpeed(1)
-            else
+            if track.Animation.AnimationId ~= TARGET_ANIMATION_ID then
                 track:Stop(0)
             end
         end
-    end
-    if not SPEED_BYPASS_ENABLED then
-        humanoid.WalkSpeed = enabled and 16 or 0
+        local anim = Instance.new("Animation")
+        anim.AnimationId = TARGET_ANIMATION_ID
+        currentAnimTrack = animator:LoadAnimation(anim)
+        currentAnimTrack.Looped = true
+        currentAnimTrack:Play()
     end
 end
 
@@ -209,12 +217,13 @@ local function unblockHumanoid(humanoid)
     pcall(function()
         humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
         humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
     end)
 end
 
 local function stopTravel()
     isTraveling = false
-    if groundPart then groundPart:Destroy(); groundPart = nil end
+    if attachedPart then attachedPart:Destroy(); attachedPart = nil end
     if activeBV then activeBV:Destroy(); activeBV = nil end
     if activeBG then activeBG:Destroy(); activeBG = nil end
 
@@ -232,12 +241,17 @@ local function stopTravel()
 
     local character = LocalPlayer.Character
     if character then
+        if currentAnimTrack then
+            currentAnimTrack:Stop(0)
+            currentAnimTrack = nil
+        end
+        setAnimateScriptEnabled(character, true) -- Bật lại script hoạt ảnh gốc khi đến nơi
+        
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         if humanoid then
             unblockHumanoid(humanoid)
             humanoid:ChangeState(Enum.HumanoidStateType.Running)
         end
-        setAnimationsEnabled(character, true)
     end
 end
 
@@ -245,28 +259,29 @@ local function setupCharacterFeatures(character)
     if not character then return end
     local hrp = character:WaitForChild("HumanoidRootPart", 5)
     local humanoid = character:WaitForChild("Humanoid", 5)
-    local animateScript = character:WaitForChild("Animate", 5)
     
     if not hrp or not humanoid then return end
-
-    if NO_ANIM_ENABLED and animateScript and animateScript:IsA("LocalScript") then
-        animateScript.Disabled = true
-    end
 
     humanoid.StateChanged:Connect(function(oldState, newState)
         if isTraveling then return end
         if newState == Enum.HumanoidStateType.Physics or 
            newState == Enum.HumanoidStateType.Ragdoll or 
            newState == Enum.HumanoidStateType.FallingDown or
+           newState == Enum.HumanoidStateType.Dead or
            newState == Enum.HumanoidStateType.Flying then
             pcall(function()
                 humanoid:ChangeState(Enum.HumanoidStateType.Running)
+                humanoid.Health = humanoid.MaxHealth
             end)
         end
     end)
 
     RunService.RenderStepped:Connect(function(dt)
         if character and character.Parent and humanoid.Health > 0 and not isTraveling then
+            if humanoid.Health < humanoid.MaxHealth then
+                humanoid.Health = humanoid.MaxHealth
+            end
+            
             hrp.AssemblyLinearVelocity = Vector3.new(0, hrp.AssemblyLinearVelocity.Y, 0)
             hrp.AssemblyAngularVelocity = Vector3.zero
 
@@ -299,12 +314,10 @@ task.spawn(function()
         local character = LocalPlayer.Character
         if character then
             local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid and humanoid.Health > 0 and not isTraveling then
+            if humanoid then
                 unblockHumanoid(humanoid)
-                if humanoid:GetState() ~= Enum.HumanoidStateType.Running and not humanoid.Sit then
-                    pcall(function()
-                        humanoid:ChangeState(Enum.HumanoidStateType.Running)
-                    end)
+                if humanoid.Health < humanoid.MaxHealth then
+                    humanoid.Health = humanoid.MaxHealth
                 end
             end
         end
@@ -318,14 +331,22 @@ local function executeFlight(destinationPos)
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not hrp or not humanoid then return end
 
-    groundPart = Instance.new("Part")
-    groundPart.Name = "AntiCheatSafetyPlatform"
-    groundPart.Size = Vector3.new(8, 1, 8)
-    groundPart.Anchored = true
-    groundPart.CanCollide = true
-    groundPart.Transparency = 1
-    groundPart.CFrame = CFrame.new(hrp.Position.X, TARGET_Y - 3.5, hrp.Position.Z)
-    groundPart.Parent = workspace
+    -- Tạo Part ngay sát dưới chân và gắn chặt vào HumanoidRootPart bằng WeldConstraint (độ trễ bằng 0)
+    attachedPart = Instance.new("Part")
+    attachedPart.Name = "FootSafetyPlatform"
+    attachedPart.Size = Vector3.new(5, 1, 5)
+    attachedPart.Anchored = false
+    attachedPart.CanCollide = true
+    attachedPart.Transparency = 1
+    
+    attachedPart.CFrame = hrp.CFrame - Vector3.new(0, 3.2, 0)
+    
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = attachedPart
+    weld.Part1 = hrp
+    weld.Parent = attachedPart
+    
+    attachedPart.Parent = workspace
 
     activeBV = Instance.new("BodyVelocity")
     activeBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
@@ -338,22 +359,18 @@ local function executeFlight(destinationPos)
     activeBG.CFrame = CFrame.lookAt(hrp.Position, destinationPos)
     activeBG.Parent = hrp
 
-    local moveSpeed = 277
+    local moveSpeed = 280
     local startTime = tick()
     local targetFlat = Vector3.new(destinationPos.X, TARGET_Y, destinationPos.Z)
     local distance = (targetFlat - hrp.Position).Magnitude
     local estimatedTime = (distance / moveSpeed) + 0.4
 
     while isTraveling and character and hrp and humanoid.Health > 0 do
-        setAnimationsEnabled(character, false)
+        forceAnimation(character)
         
         local currentFlatPos = Vector3.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
-        
-        if groundPart then
-            groundPart.CFrame = CFrame.new(currentFlatPos.X, TARGET_Y - 3.5, currentFlatPos.Z)
-        end
-
         local currentDist = (targetFlat - currentFlatPos).Magnitude
+        
         if currentDist <= 5 or (tick() - startTime) > estimatedTime then
             break
         end
@@ -361,12 +378,12 @@ local function executeFlight(destinationPos)
         local currentDir = (targetFlat - currentFlatPos).Unit
         activeBV.Velocity = Vector3.new(currentDir.X * moveSpeed, 0, currentDir.Z * moveSpeed)
 
-        task.wait(0.015)
+        RunService.Heartbeat:Wait()
     end
 
     if activeBV then activeBV:Destroy(); activeBV = nil end
     if activeBG then activeBG:Destroy(); activeBG = nil end
-    if groundPart then groundPart:Destroy(); groundPart = nil end
+    if attachedPart then attachedPart:Destroy(); attachedPart = nil end
 end
 
 local function moveToTarget(targetPosition, clickedButton, zoneName)
@@ -381,7 +398,7 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
     local hrp = character:FindFirstChild("HumanoidRootPart")
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     
-    if not hrp or not humanoid or humanoid.Health <= 0 then return end
+    if not hrp or not humanoid then return end
 
     isTraveling = true
     activeZoneButton = clickedButton
@@ -394,7 +411,7 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
         stroke.Color = Color3.fromRGB(255, 69, 0)
     end
 
-    setAnimationsEnabled(character, false)
+    forceAnimation(character)
 
     hrp.AssemblyLinearVelocity = Vector3.zero
     hrp.CFrame = CFrame.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
@@ -412,27 +429,14 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
     end
 
     if isTraveling then
-        groundPart = Instance.new("Part")
-        groundPart.Name = "AntiCheatSafetyPlatform"
-        groundPart.Size = Vector3.new(8, 1, 8)
-        groundPart.Anchored = true
-        groundPart.CanCollide = true
-        groundPart.Transparency = 1
-        groundPart.CFrame = CFrame.new(targetPosition.X, TARGET_Y - 3.5, targetPosition.Z)
-        groundPart.Parent = workspace
-
         local finalCFrame = CFrame.new(targetPosition)
         local tpEndTime = tick() + 0.3
 
-        while isTraveling and tick() < tpEndTime and character and hrp and humanoid.Health > 0 do
-            setAnimationsEnabled(character, false)
+        while isTraveling and tick() < tpEndTime and character and hrp do
+            forceAnimation(character)
             hrp.AssemblyLinearVelocity = Vector3.zero
             hrp.AssemblyAngularVelocity = Vector3.zero
             hrp.CFrame = finalCFrame
-
-            if groundPart then
-                groundPart.CFrame = finalCFrame - Vector3.new(0, 3.5, 0)
-            end
             RunService.Heartbeat:Wait()
         end
     end
