@@ -1,4 +1,4 @@
-local TARGET_Y = 77.00
+local TARGET_Y = 80.00
 local FINAL_SAFE_ZONE = Vector3.new(549.39, TARGET_Y, -365.50)
 local SAFE_ESCAPE_POS = Vector3.new(547.54, TARGET_Y, -364.99)
 
@@ -30,34 +30,9 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local SPEED_BYPASS_ENABLED = true
 local CUSTOM_SPEED = 270.0
+
+-- Animation ID chuẩn của Roblox (Animation 1)
 local TARGET_ANIMATION_ID = "rbxassetid://180435571"
-
-local function triggerAdminRiftWake()
-    pcall(function()
-        local adminEventWake = getgenv().__CHSAE_RiftWake or getgenv().__CHSAE_AdminEventWake
-        if adminEventWake then 
-            adminEventWake:Fire("unload") 
-        end
-        local idleWorkerWake = getgenv().__CHSAE_IdleWorkerWake
-        if idleWorkerWake then 
-            idleWorkerWake:Fire("unload") 
-        end
-    end)
-end
-
-local function cleanAndResetHumanoid(character)
-    if not character then return end
-    local oldHumanoid = character:FindFirstChildOfClass("Humanoid")
-    if oldHumanoid then
-        oldHumanoid:Destroy()
-    end
-
-    local newHumanoid = Instance.new("Humanoid")
-    newHumanoid.MaxHealth = 100
-    newHumanoid.Health = 100
-    newHumanoid.HipHeight = 3.0
-    newHumanoid.Parent = character
-end
 
 local function modifyPrompt(prompt)
     if prompt:IsA("ProximityPrompt") then
@@ -218,6 +193,7 @@ local function forceAnimation(character)
     if not humanoid then return end
     local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
     
+    -- Tắt script chạy animation mặc định để nhân vật đứng bất động như tượng
     setAnimateScriptEnabled(character, false)
     
     if not currentAnimTrack or not currentAnimTrack.IsPlaying then
@@ -232,6 +208,17 @@ local function forceAnimation(character)
         currentAnimTrack.Looped = true
         currentAnimTrack:Play()
     end
+end
+
+local function unblockHumanoid(humanoid)
+    if not humanoid then return end
+    if humanoid.PlatformStand then humanoid.PlatformStand = false end
+    if humanoid.Sit then humanoid.Sit = false end
+    pcall(function()
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+    end)
 end
 
 local function stopTravel()
@@ -258,18 +245,36 @@ local function stopTravel()
             currentAnimTrack:Stop(0)
             currentAnimTrack = nil
         end
-        setAnimateScriptEnabled(character, true)
+        setAnimateScriptEnabled(character, true) -- Bật lại script hoạt ảnh gốc khi đến nơi
+        
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            unblockHumanoid(humanoid)
+            humanoid:ChangeState(Enum.HumanoidStateType.Running)
+        end
     end
 end
 
 local function setupCharacterFeatures(character)
     if not character then return end
     local hrp = character:WaitForChild("HumanoidRootPart", 5)
-    
-    cleanAndResetHumanoid(character)
     local humanoid = character:WaitForChild("Humanoid", 5)
     
     if not hrp or not humanoid then return end
+
+    humanoid.StateChanged:Connect(function(oldState, newState)
+        if isTraveling then return end
+        if newState == Enum.HumanoidStateType.Physics or 
+           newState == Enum.HumanoidStateType.Ragdoll or 
+           newState == Enum.HumanoidStateType.FallingDown or
+           newState == Enum.HumanoidStateType.Dead or
+           newState == Enum.HumanoidStateType.Flying then
+            pcall(function()
+                humanoid:ChangeState(Enum.HumanoidStateType.Running)
+                humanoid.Health = humanoid.MaxHealth
+            end)
+        end
+    end)
 
     RunService.RenderStepped:Connect(function(dt)
         if character and character.Parent and humanoid.Health > 0 and not isTraveling then
@@ -303,6 +308,22 @@ if LocalPlayer.Character then
 end
 LocalPlayer.CharacterAdded:Connect(setupCharacterFeatures)
 
+task.spawn(function()
+    while true do
+        task.wait(0.05)
+        local character = LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                unblockHumanoid(humanoid)
+                if humanoid.Health < humanoid.MaxHealth then
+                    humanoid.Health = humanoid.MaxHealth
+                end
+            end
+        end
+    end
+end)
+
 local function executeFlight(destinationPos)
     local character = LocalPlayer.Character
     if not character then return end
@@ -310,8 +331,7 @@ local function executeFlight(destinationPos)
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not hrp or not humanoid then return end
 
-    triggerAdminRiftWake()
-
+    -- Tạo Part ngay sát dưới chân và gắn chặt vào HumanoidRootPart bằng WeldConstraint (độ trễ bằng 0)
     attachedPart = Instance.new("Part")
     attachedPart.Name = "FootSafetyPlatform"
     attachedPart.Size = Vector3.new(5, 1, 5)
@@ -339,7 +359,7 @@ local function executeFlight(destinationPos)
     activeBG.CFrame = CFrame.lookAt(hrp.Position, destinationPos)
     activeBG.Parent = hrp
 
-    local moveSpeed = 700
+    local moveSpeed = 280
     local startTime = tick()
     local targetFlat = Vector3.new(destinationPos.X, TARGET_Y, destinationPos.Z)
     local distance = (targetFlat - hrp.Position).Magnitude
