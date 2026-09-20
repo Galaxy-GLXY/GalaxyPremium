@@ -4,6 +4,7 @@ local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
 local TS = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
+local UIS = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 
 local function ApplyFFlags()
@@ -258,7 +259,41 @@ ToggleBtn.MouseButton1Click:Connect(function()
     Main.Visible = not Main.Visible
 end)
 
--- VÒNG LẶP RENDERSTEPPED DÙNG ĐỂ TỐC ĐỘ DI CHUYỂN VÀ LOOP TP MƯỢT TUYỆT ĐỐI (ZERO DELAY)
+-- HÀM TÍNH HƯỚNG DI CHUYỂN CHÍNH XÁC THEO NÚT BẤM VÀ CAMERA
+local function GetDirection()
+    local moveVector = Vector3.zero
+    if UIS:IsKeyDown(Enum.KeyCode.W) or UIS:IsKeyDown(Enum.KeyCode.Up) then
+        moveVector = moveVector + Vector3.new(0, 0, -1)
+    end
+    if UIS:IsKeyDown(Enum.KeyCode.S) or UIS:IsKeyDown(Enum.KeyCode.Down) then
+        moveVector = moveVector + Vector3.new(0, 0, 1)
+    end
+    if UIS:IsKeyDown(Enum.KeyCode.A) or UIS:IsKeyDown(Enum.KeyCode.Left) then
+        moveVector = moveVector + Vector3.new(-1, 0, 0)
+    end
+    if UIS:IsKeyDown(Enum.KeyCode.D) or UIS:IsKeyDown(Enum.KeyCode.Right) then
+        moveVector = moveVector + Vector3.new(1, 0, 0)
+    end
+
+    if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
+        local hum = LP.Character:FindFirstChildOfClass("Humanoid")
+        if hum.MoveDirection.Magnitude > 0 and moveVector.Magnitude == 0 then
+            return hum.MoveDirection
+        end
+    end
+
+    if moveVector.Magnitude > 0 then
+        moveVector = moveVector.Unit
+        local camCFrame = Camera.CFrame
+        local forward = Vector3.new(camCFrame.LookVector.X, 0, camCFrame.LookVector.Z).Unit
+        local right = Vector3.new(camCFrame.RightVector.X, 0, camCFrame.RightVector.Z).Unit
+        return (forward * -moveVector.Z + right * moveVector.X).Unit
+    end
+
+    return Vector3.zero
+end
+
+-- VÒNG LẶP RENDERSTEPPED DÙNG ĐỂ TỐC ĐỘ DI CHUYỂN VÀ LOOP TP MƯỢT TUYỆT ĐỐI
 renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
     if not _G.Active then return end
     pcall(function()
@@ -267,24 +302,31 @@ renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
         local myHRP = myChar.HumanoidRootPart
         local hum = myChar:FindFirstChildOfClass("Humanoid")
 
-        -- Tăng tốc mượt không delay
-        if _G.Speed > 16 and hum and hum.MoveDirection.Magnitude > 0 then
-            local moveDir = hum.MoveDirection
-            local moveDelta = moveDir * (_G.Speed - 16) * deltaTime
-            myHRP.CFrame = myHRP.CFrame + moveDelta
+        -- TĂNG TỐC DI CHUYỂN CHÍNH XÁC THEO NÚT BẤM VÀ HƯỚNG XOAY NHÂN VẬT
+        if _G.Speed > 16 then
+            local moveDirection = GetDirection()
+            if moveDirection.Magnitude > 0 then
+                local moveDelta = moveDirection * (_G.Speed - 16) * deltaTime
+                myHRP.CFrame = myHRP.CFrame + moveDelta
+                
+                -- Quay mặt nhân vật theo đúng hướng di chuyển để dễ canh trúng địch
+                if not _G.Aim and not _G.TPNearest and not _G.LoopTP then
+                    local targetRotation = CFrame.lookAt(myHRP.Position, myHRP.Position + moveDirection)
+                    myHRP.CFrame = CFrame.new(myHRP.Position) * targetRotation.Rotation
+                end
+            end
         end
 
-        -- 1. LOOP TP TỚI NGƯỜI CHƠI GẦN NHẤT (SIÊU MƯỢT + ĐỒNG BỘ NGUYÊN BẢN C FRAME XOAY)
+        -- 1. LOOP TP TỚI NGƯỜI CHƠI GẦN NHẤT
         if _G.TPNearest then
             local t = GetNearestPlayer()
             if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                 local targetHRP = t.Character.HumanoidRootPart
-                -- Khóa CFrame theo mục tiêu (sau lưng 3 studs), xoay 180 độ mục tiêu vẫn dính chặt
                 myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 3)
             end
         end
 
-        -- 2. LOOP TP TỚI NGƯỜI CHƠI THEO TÊN (SIÊU MƯỢT + ĐỒNG BỘ NGUYÊN BẢN C FRAME XOAY)
+        -- 2. LOOP TP TỚI NGƯỜI CHƠI THEO TÊN
         if _G.LoopTP then
             local t = GetPlayerSmart(_G.TargetName)
             if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
