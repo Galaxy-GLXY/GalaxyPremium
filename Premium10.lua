@@ -7,7 +7,9 @@ local Lighting = game:GetService("Lighting")
 local Camera = workspace.CurrentCamera
 
 local function ApplyFFlags()
-    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    pcall(function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    end)
     Lighting.GlobalShadows = false
     Lighting.Brightness = 0.5
     Lighting.OutdoorAmbient = Color3.fromRGB(100, 100, 100)
@@ -17,7 +19,7 @@ local function ApplyFFlags()
         if obj:IsA("BasePart") or obj:IsA("MeshPart") then
             obj.Material = Enum.Material.SmoothPlastic
             obj.CastShadow = false
-            if obj.Name:lower():find("effect") or obj.Parent.Name:lower():find("fx") then
+            if obj.Name:lower():find("effect") or (obj.Parent and obj.Parent.Name:lower():find("fx")) then
                 obj.Transparency = 0.7
             end
         end
@@ -54,10 +56,10 @@ local function GiveNoclip()
     Tool.RequiresHandle = false
     Tool.CanBeDropped = false
     Tool.ToolTip = "Cầm trên tay để đi xuyên tường"
-    Tool.Parent = LP.Backpack
+    Tool.Parent = LP:WaitForChild("Backpack")
 end
 
-RS.Stepped:Connect(function()
+local steppedConnection = RS.Stepped:Connect(function()
     if _G.Active and LP.Character then
         if LP.Character:FindFirstChild("Noclip") then
             for _, part in pairs(LP.Character:GetDescendants()) do
@@ -67,7 +69,7 @@ RS.Stepped:Connect(function()
     end
 end)
 
-LP.CharacterAdded:Connect(function()
+local charAddedConnection = LP.CharacterAdded:Connect(function()
     task.wait(0.5)
     GiveNoclip()
 end)
@@ -95,7 +97,6 @@ end
 local Main = Instance.new("Frame", G); Main.Visible = false; Main.Size = UDim2.new(0, 220, 0, 520); Main.Position = UDim2.new(0.5, -230, 0.3, 0); Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.Active = true; Main.Draggable = true; Instance.new("UIStroke", Main).Color = NeonRed
 local SubMenu = Instance.new("Frame", G); SubMenu.Visible = false; SubMenu.Size = UDim2.new(0, 200, 0, 260); SubMenu.Position = UDim2.new(0.5, 10, 0.3, 0); SubMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15); SubMenu.Active = true; SubMenu.Draggable = true; Instance.new("UIStroke", SubMenu).Color = NeonRed
 
--- MENU ĐỘC LẬP CHO TP NEAREST
 local TPMenu = Instance.new("Frame", G); TPMenu.Visible = false; TPMenu.Size = UDim2.new(0, 200, 0, 110); TPMenu.Position = UDim2.new(0.5, 10, 0.6, 0); TPMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15); TPMenu.Active = true; TPMenu.Draggable = true; Instance.new("UIStroke", TPMenu).Color = NeonRed
 
 local function CreateTitle(p, txt)
@@ -156,22 +157,10 @@ TPBtnInMenu.MouseButton1Click:Connect(function()
     _G.TPNearest = tpState
     TPBtnInMenu.Text = "TP NEAREST: " .. (tpState and "ON" or "OFF")
     TPBtnInMenu.TextColor3 = tpState and NeonRed or Color3.new(1,1,1)
-    
-    if _G.TPNearest then
-        task.spawn(function()
-            while _G.TPNearest and _G.Active do
-                task.wait()
-                local t = GetNearestPlayer()
-                if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-                    LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-                end
-            end
-        end)
-    end
 end)
 
-AddSubBtn("LOOP TELEPORT", 105, function(v) _G.LoopTP = v; task.spawn(function() while _G.LoopTP and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and t.Character:FindFirstChild("HumanoidRootPart") then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3) end end end) end)
-AddSubBtn("BRING PLAYER", 160, function(v) _G.Bring = v; task.spawn(function() while _G.Bring and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and t.Character:FindFirstChild("HumanoidRootPart") then t.Character.HumanoidRootPart.CFrame = LP.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3) end end end) end)
+AddSubBtn("LOOP TELEPORT", 105, function(v) _G.LoopTP = v end)
+AddSubBtn("BRING PLAYER", 160, function(v) _G.Bring = v end)
 
 AddMainBtn("SMART AIM", 50, function(v) _G.Aim = v end)
 AddMainBtn("TP NEAREST", 105, function(v) TPMenu.Visible = v end)
@@ -215,6 +204,10 @@ Inp.FocusLost:Connect(function(enterPressed)
 end)
 
 local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-20,0,40); Close.Position = UDim2.new(0,10,0,435); Close.BackgroundColor3 = Color3.new(0.2,0,0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1,1,1); Close.Font = Enum.Font.SourceSansBold
+
+local renderSteppedConnection = nil
+local heartbeatConnection = nil
+
 Close.MouseButton1Click:Connect(function()
     _G.Active = false
     _G.TPNearest = false
@@ -223,6 +216,13 @@ Close.MouseButton1Click:Connect(function()
     _G.ESP = false
     _G.Aim = false
     _G.Fly = false
+    _G.Speed = 16
+
+    if renderSteppedConnection then renderSteppedConnection:Disconnect() end
+    if heartbeatConnection then heartbeatConnection:Disconnect() end
+    if steppedConnection then steppedConnection:Disconnect() end
+    if charAddedConnection then charAddedConnection:Disconnect() end
+
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
         LP.Character.Humanoid.WalkSpeed = 16
         for _, part in pairs(LP.Character:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = true end end
@@ -235,11 +235,10 @@ Close.MouseButton1Click:Connect(function()
     G:Destroy()
 end)
 
--- NÚT BẬT/TẮT MENU CHÍNH (ĐÃ CHỈNH VỊ TRÍ LÊN GÓC TREN TRÁI, CẠNH KHU VỰC NÚT CHAT)
 local ToggleBtn = Instance.new("TextButton", G)
 ToggleBtn.Visible = false
 ToggleBtn.Size = UDim2.new(0, 45, 0, 45)
-ToggleBtn.Position = UDim2.new(0, 110, 0, 15) -- Đặt ở góc trên bên trái (cạnh nút Chat)
+ToggleBtn.Position = UDim2.new(0, 110, 0, 15)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 ToggleBtn.Text = "G"
 ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
@@ -259,13 +258,54 @@ ToggleBtn.MouseButton1Click:Connect(function()
     Main.Visible = not Main.Visible
 end)
 
-RS.Heartbeat:Connect(function()
+-- VÒNG LẶP RENDERSTEPPED DÙNG ĐỂ TỐC ĐỘ DI CHUYỂN VÀ LOOP TP MƯỢT TUYỆT ĐỐI (ZERO DELAY)
+renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
     if not _G.Active then return end
     pcall(function()
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            LP.Character.Humanoid.WalkSpeed = _G.Speed
+        local myChar = LP.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+        local myHRP = myChar.HumanoidRootPart
+        local hum = myChar:FindFirstChildOfClass("Humanoid")
+
+        -- Tăng tốc mượt không delay
+        if _G.Speed > 16 and hum and hum.MoveDirection.Magnitude > 0 then
+            local moveDir = hum.MoveDirection
+            local moveDelta = moveDir * (_G.Speed - 16) * deltaTime
+            myHRP.CFrame = myHRP.CFrame + moveDelta
         end
-        
+
+        -- 1. LOOP TP TỚI NGƯỜI CHƠI GẦN NHẤT (SIÊU MƯỢT + ĐỒNG BỘ NGUYÊN BẢN C FRAME XOAY)
+        if _G.TPNearest then
+            local t = GetNearestPlayer()
+            if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                local targetHRP = t.Character.HumanoidRootPart
+                -- Khóa CFrame theo mục tiêu (sau lưng 3 studs), xoay 180 độ mục tiêu vẫn dính chặt
+                myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 3)
+            end
+        end
+
+        -- 2. LOOP TP TỚI NGƯỜI CHƠI THEO TÊN (SIÊU MƯỢT + ĐỒNG BỘ NGUYÊN BẢN C FRAME XOAY)
+        if _G.LoopTP then
+            local t = GetPlayerSmart(_G.TargetName)
+            if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                local targetHRP = t.Character.HumanoidRootPart
+                myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 3)
+            end
+        end
+
+        -- 3. BRING PLAYER (KÉO NGƯỜI CHƠI)
+        if _G.Bring then
+            local t = GetPlayerSmart(_G.TargetName)
+            if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                t.Character.HumanoidRootPart.CFrame = myHRP.CFrame * CFrame.new(0, 0, -3)
+            end
+        end
+    end)
+end)
+
+heartbeatConnection = RS.Heartbeat:Connect(function()
+    if not _G.Active then return end
+    pcall(function()
         if _G.Fly and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
             LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) 
         end
