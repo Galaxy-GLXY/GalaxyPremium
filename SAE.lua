@@ -22,29 +22,32 @@ local ZONES = {
 
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local Camera = Workspace.CurrentCamera
 
-local SPEED_BYPASS_ENABLED = true
-local CUSTOM_SPEED = 270.0
-
--- Animation ID chuẩn của Roblox (Animation 1)
+local CUSTOM_SPEED = 300.0
 local TARGET_ANIMATION_ID = "rbxassetid://180435571"
 
-local function modifyPrompt(prompt)
-    if prompt:IsA("ProximityPrompt") then
-        prompt.HoldDuration = 0
+for _, obj in ipairs(Workspace:GetDescendants()) do
+    if obj:IsA("ProximityPrompt") then
+        obj.HoldDuration = 0
     end
 end
 
-for _, obj in ipairs(Workspace:GetDescendants()) do
-    modifyPrompt(obj)
-end
+Workspace.DescendantAdded:Connect(function(obj)
+    if obj:IsA("ProximityPrompt") then
+        obj.HoldDuration = 0
+    end
+end)
 
-Workspace.DescendantAdded:Connect(modifyPrompt)
+local existingGui = PlayerGui:FindFirstChild("UnifiedScriptGui")
+if existingGui then
+    existingGui:Destroy()
+end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "UnifiedScriptGui"
@@ -52,12 +55,10 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 200, 0, 390)
 MainFrame.Position = UDim2.new(0.82, 0, 0.15, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.BorderSizePixel = 0
-MainFrame.Visible = true
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
@@ -70,7 +71,6 @@ MainStroke.Thickness = 2
 MainStroke.Parent = MainFrame
 
 local TopBar = Instance.new("Frame")
-TopBar.Name = "TopBar"
 TopBar.Size = UDim2.new(1, 0, 0, 40)
 TopBar.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 TopBar.BorderSizePixel = 0
@@ -80,26 +80,17 @@ local TopBarCorner = Instance.new("UICorner")
 TopBarCorner.CornerRadius = UDim.new(0, 12)
 TopBarCorner.Parent = TopBar
 
-local TopBarFix = Instance.new("Frame")
-TopBarFix.Size = UDim2.new(1, 0, 0, 10)
-TopBarFix.Position = UDim2.new(0, 0, 1, -10)
-TopBarFix.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-TopBarFix.BorderSizePixel = 0
-TopBarFix.Parent = TopBar
-
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Size = UDim2.new(1, -45, 1, 0)
 TitleLabel.Position = UDim2.new(0, 10, 0, 0)
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = "By GALAXY"
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.TextColor3 = Color3.fromRGB(0, 191, 255)
 TitleLabel.TextSize = 14
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.Parent = TopBar
 
 local MinimizeButton = Instance.new("TextButton")
-MinimizeButton.Name = "MinimizeButton"
 MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
 MinimizeButton.Position = UDim2.new(1, -35, 0.5, -15)
 MinimizeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -114,13 +105,12 @@ MinCorner.CornerRadius = UDim.new(0, 6)
 MinCorner.Parent = MinimizeButton
 
 local ContentScroll = Instance.new("ScrollingFrame")
-ContentScroll.Name = "ContentScroll"
 ContentScroll.Size = UDim2.new(1, 0, 1, -40)
 ContentScroll.Position = UDim2.new(0, 0, 0, 40)
 ContentScroll.BackgroundTransparency = 1
 ContentScroll.BorderSizePixel = 0
-ContentScroll.ClipsDescendants = true
 ContentScroll.ScrollBarThickness = 6
+ContentScroll.CanvasSize = UDim2.new(0, 0, 0, (#ZONES * 42) + 20)
 ContentScroll.Parent = MainFrame
 
 local UIListLayout = Instance.new("UIListLayout")
@@ -134,30 +124,25 @@ UIPadding.PaddingTop = UDim.new(0, 10)
 UIPadding.PaddingBottom = UDim.new(0, 10)
 UIPadding.Parent = ContentScroll
 
-local dragging, dragInput, dragStart, startPos
+local dragging, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = MainFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
     end
 end)
 
-TopBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
-    if dragging and dragInput then
-        local delta = dragInput.Position - dragStart
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
     end
 end)
 
@@ -166,10 +151,12 @@ MinimizeButton.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
     if isMinimized then
         MinimizeButton.Text = "+"
-        TweenService:Create(MainFrame, TweenInfo.new(0.2), {Size = UDim2.new(0, 200, 0, 40)}):Play()
+        MainFrame.Size = UDim2.new(0, 200, 0, 40)
+        ContentScroll.Visible = false
     else
         MinimizeButton.Text = "-"
-        TweenService:Create(MainFrame, TweenInfo.new(0.2), {Size = UDim2.new(0, 200, 0, 390)}):Play()
+        MainFrame.Size = UDim2.new(0, 200, 0, 390)
+        ContentScroll.Visible = true
     end
 end)
 
@@ -193,7 +180,6 @@ local function forceAnimation(character)
     if not humanoid then return end
     local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
     
-    -- Tắt script chạy animation mặc định để nhân vật đứng bất động như tượng
     setAnimateScriptEnabled(character, false)
     
     if not currentAnimTrack or not currentAnimTrack.IsPlaying then
@@ -221,6 +207,78 @@ local function unblockHumanoid(humanoid)
     end)
 end
 
+local previousCharacter = nil
+
+local function applyBypass(character)
+    if not character then return end
+    previousCharacter = character
+    local oldHumanoid = character:FindFirstChildOfClass("Humanoid")
+    if oldHumanoid and not character:FindFirstChild("HumanoidProxy") then
+        local cloneHum = oldHumanoid:Clone()
+        cloneHum.Name = "HumanoidProxy"
+        cloneHum.Parent = character
+        oldHumanoid:Destroy()
+        
+        LocalPlayer.Character = nil
+        LocalPlayer.Character = character
+        Camera.CameraSubject = cloneHum
+
+        RunService.RenderStepped:Connect(function(dt)
+            if character and character.Parent and not isTraveling then
+                if cloneHum.Health < cloneHum.MaxHealth then
+                    cloneHum.Health = cloneHum.MaxHealth
+                end
+                
+                local hrp = character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    hrp.AssemblyAngularVelocity = Vector3.zero
+
+                    cloneHum.WalkSpeed = 0
+                    local moveDir = cloneHum.MoveDirection
+                    if moveDir.Magnitude > 0 then
+                        hrp.CFrame = hrp.CFrame + (moveDir * (CUSTOM_SPEED * dt))
+                        local targetLookAt = Vector3.new(moveDir.X, 0, moveDir.Z)
+                        if targetLookAt.Magnitude > 0 then
+                            local currentCF = hrp.CFrame
+                            local newCF = CFrame.new(currentCF.Position, currentCF.Position + targetLookAt)
+                            hrp.CFrame = currentCF:Lerp(newCF, 0.3)
+                        end
+                    end
+
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) or cloneHum.Jump then
+                        if hrp.Position.Y <= (TARGET_Y + 5) then
+                            hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 50, hrp.AssemblyLinearVelocity.Z)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end
+
+if LocalPlayer.Character then
+    applyBypass(LocalPlayer.Character)
+end
+LocalPlayer.CharacterAdded:Connect(applyBypass)
+
+-- Tích hợp Anti-hit mới của bạn vào luồng chạy ngầm
+task.spawn(function()
+    while true do
+        task.wait(0.05)
+        local character = LocalPlayer.Character
+        local cloneHum = character and character:FindFirstChild("HumanoidProxy")
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        
+        if character == previousCharacter and cloneHum and cloneHum.Health > 0
+            and root and not root.Anchored and not cloneHum.PlatformStand and not cloneHum.Sit
+            and cloneHum:GetState() == Enum.HumanoidStateType.Physics
+            and (tonumber(LocalPlayer:GetAttribute("RagdollEndTime")) or 0) <= workspace:GetServerTimeNow()
+            and #character:QueryDescendants("BallSocketConstraint") == 0 then
+            cloneHum:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end
+    end
+end)
+
 local function stopTravel()
     isTraveling = false
     if attachedPart then attachedPart:Destroy(); attachedPart = nil end
@@ -230,12 +288,6 @@ local function stopTravel()
     if activeZoneButton then
         activeZoneButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         activeZoneButton.Text = originalButtonText
-        local stroke = activeZoneButton:FindFirstChildOfClass("UIStroke")
-        if stroke and activeZoneButton.Name:find("Safe Zone") then
-            stroke.Color = Color3.fromRGB(255, 255, 255)
-        elseif stroke then
-            stroke.Color = Color3.fromRGB(0, 191, 255)
-        end
         activeZoneButton = nil
     end
 
@@ -245,107 +297,35 @@ local function stopTravel()
             currentAnimTrack:Stop(0)
             currentAnimTrack = nil
         end
-        setAnimateScriptEnabled(character, true) -- Bật lại script hoạt ảnh gốc khi đến nơi
+        setAnimateScriptEnabled(character, true)
         
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            unblockHumanoid(humanoid)
-            humanoid:ChangeState(Enum.HumanoidStateType.Running)
+        local cloneHum = character:FindFirstChild("HumanoidProxy")
+        if cloneHum then
+            unblockHumanoid(cloneHum)
+            cloneHum:ChangeState(Enum.HumanoidStateType.Running)
         end
     end
 end
-
-local function setupCharacterFeatures(character)
-    if not character then return end
-    local hrp = character:WaitForChild("HumanoidRootPart", 5)
-    local humanoid = character:WaitForChild("Humanoid", 5)
-    
-    if not hrp or not humanoid then return end
-
-    humanoid.StateChanged:Connect(function(oldState, newState)
-        if isTraveling then return end
-        if newState == Enum.HumanoidStateType.Physics or 
-           newState == Enum.HumanoidStateType.Ragdoll or 
-           newState == Enum.HumanoidStateType.FallingDown or
-           newState == Enum.HumanoidStateType.Dead or
-           newState == Enum.HumanoidStateType.Flying then
-            pcall(function()
-                humanoid:ChangeState(Enum.HumanoidStateType.Running)
-                humanoid.Health = humanoid.MaxHealth
-            end)
-        end
-    end)
-
-    RunService.RenderStepped:Connect(function(dt)
-        if character and character.Parent and humanoid.Health > 0 and not isTraveling then
-            if humanoid.Health < humanoid.MaxHealth then
-                humanoid.Health = humanoid.MaxHealth
-            end
-            
-            hrp.AssemblyLinearVelocity = Vector3.new(0, hrp.AssemblyLinearVelocity.Y, 0)
-            hrp.AssemblyAngularVelocity = Vector3.zero
-
-            if SPEED_BYPASS_ENABLED then
-                humanoid.WalkSpeed = 0
-                local moveDir = humanoid.MoveDirection
-                if moveDir.Magnitude > 0 then
-                    hrp.CFrame = hrp.CFrame + (moveDir * (CUSTOM_SPEED * dt))
-                    
-                    local targetLookAt = Vector3.new(moveDir.X, 0, moveDir.Z)
-                    if targetLookAt.Magnitude > 0 then
-                        local currentCF = hrp.CFrame
-                        local newCF = CFrame.new(currentCF.Position, currentCF.Position + targetLookAt)
-                        hrp.CFrame = currentCF:Lerp(newCF, 0.3)
-                    end
-                end
-            end
-        end
-    end)
-end
-
-if LocalPlayer.Character then
-    setupCharacterFeatures(LocalPlayer.Character)
-end
-LocalPlayer.CharacterAdded:Connect(setupCharacterFeatures)
-
-task.spawn(function()
-    while true do
-        task.wait(0.05)
-        local character = LocalPlayer.Character
-        if character then
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                unblockHumanoid(humanoid)
-                if humanoid.Health < humanoid.MaxHealth then
-                    humanoid.Health = humanoid.MaxHealth
-                end
-            end
-        end
-    end
-end)
 
 local function executeFlight(destinationPos)
     local character = LocalPlayer.Character
     if not character then return end
     local hrp = character:FindFirstChild("HumanoidRootPart")
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not hrp or not humanoid then return end
+    local cloneHum = character:FindFirstChild("HumanoidProxy")
+    if not hrp or not cloneHum then return end
 
-    -- Tạo Part ngay sát dưới chân và gắn chặt vào HumanoidRootPart bằng WeldConstraint (độ trễ bằng 0)
     attachedPart = Instance.new("Part")
     attachedPart.Name = "FootSafetyPlatform"
     attachedPart.Size = Vector3.new(5, 1, 5)
     attachedPart.Anchored = false
     attachedPart.CanCollide = true
     attachedPart.Transparency = 1
-    
     attachedPart.CFrame = hrp.CFrame - Vector3.new(0, 3.2, 0)
     
     local weld = Instance.new("WeldConstraint")
     weld.Part0 = attachedPart
     weld.Part1 = hrp
     weld.Parent = attachedPart
-    
     attachedPart.Parent = workspace
 
     activeBV = Instance.new("BodyVelocity")
@@ -359,25 +339,23 @@ local function executeFlight(destinationPos)
     activeBG.CFrame = CFrame.lookAt(hrp.Position, destinationPos)
     activeBG.Parent = hrp
 
-    local moveSpeed = 280
+    local moveSpeed = 400
     local startTime = tick()
     local targetFlat = Vector3.new(destinationPos.X, TARGET_Y, destinationPos.Z)
     local distance = (targetFlat - hrp.Position).Magnitude
     local estimatedTime = (distance / moveSpeed) + 0.4
 
-    while isTraveling and character and hrp and humanoid.Health > 0 do
+    while isTraveling and character and hrp and cloneHum.Health > 0 do
         forceAnimation(character)
         
-        local currentFlatPos = Vector3.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
-        local currentDist = (targetFlat - currentFlatPos).Magnitude
+        cloneHum.WalkSpeed = 0
         
-        if currentDist <= 5 or (tick() - startTime) > estimatedTime then
+        local currentFlatPos = Vector3.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
+        if (targetFlat - currentFlatPos).Magnitude <= 5 or (tick() - startTime) > estimatedTime then
             break
         end
-
         local currentDir = (targetFlat - currentFlatPos).Unit
         activeBV.Velocity = Vector3.new(currentDir.X * moveSpeed, 0, currentDir.Z * moveSpeed)
-
         RunService.Heartbeat:Wait()
     end
 
@@ -394,11 +372,9 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
 
     local character = LocalPlayer.Character
     if not character then return end
-
     local hrp = character:FindFirstChild("HumanoidRootPart")
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    
-    if not hrp or not humanoid then return end
+    local cloneHum = character:FindFirstChild("HumanoidProxy")
+    if not hrp or not cloneHum then return end
 
     isTraveling = true
     activeZoneButton = clickedButton
@@ -406,13 +382,8 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
 
     clickedButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
     clickedButton.Text = "STOP"
-    local stroke = clickedButton:FindFirstChildOfClass("UIStroke")
-    if stroke then
-        stroke.Color = Color3.fromRGB(255, 69, 0)
-    end
 
     forceAnimation(character)
-
     hrp.AssemblyLinearVelocity = Vector3.zero
     hrp.CFrame = CFrame.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
 
@@ -430,13 +401,15 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
 
     if isTraveling then
         local finalCFrame = CFrame.new(targetPosition)
-        local tpEndTime = tick() + 0.3
-
+        local tpEndTime = tick() + 0.5
         while isTraveling and tick() < tpEndTime and character and hrp do
             forceAnimation(character)
             hrp.AssemblyLinearVelocity = Vector3.zero
             hrp.AssemblyAngularVelocity = Vector3.zero
             hrp.CFrame = finalCFrame
+            if cloneHum then
+                cloneHum:ChangeState(Enum.HumanoidStateType.Running)
+            end
             RunService.Heartbeat:Wait()
         end
     end
@@ -464,28 +437,7 @@ for _, zone in ipairs(ZONES) do
     ButtonStroke.Thickness = 1.5
     ButtonStroke.Parent = ZoneButton
 
-    if zone.IsSpecial then
-        ZoneButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        ZoneButton.Font = Enum.Font.GothamBold
-        
-        task.spawn(function()
-            while ZoneButton and ZoneButton.Parent do
-                if not isTraveling or activeZoneButton ~= ZoneButton then
-                    for i = 0, 1, 0.01 do
-                        if not ZoneButton or not ZoneButton.Parent or (isTraveling and activeZoneButton == ZoneButton) then break end
-                        ButtonStroke.Color = Color3.fromHSV(i, 1, 1)
-                        task.wait(0.05)
-                    end
-                else
-                    task.wait(0.2)
-                end
-            end
-        end)
-    end
-
     ZoneButton.MouseButton1Click:Connect(function()
         moveToTarget(zone.Position, ZoneButton, zone.Name)
     end)
 end
-
-ContentScroll.CanvasSize = UDim2.new(0, 0, 0, (#ZONES * 41) + 20)
