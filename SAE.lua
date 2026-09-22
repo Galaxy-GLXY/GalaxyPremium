@@ -29,7 +29,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Camera = Workspace.CurrentCamera
 
-local CUSTOM_SPEED = 300.0
+local CUSTOM_SPEED = 270.0
 local TARGET_ANIMATION_ID = "rbxassetid://180435571"
 
 for _, obj in ipairs(Workspace:GetDescendants()) do
@@ -161,9 +161,7 @@ MinimizeButton.MouseButton1Click:Connect(function()
 end)
 
 local isTraveling = false
-local attachedPart = nil
-local activeBV = nil
-local activeBG = nil
+local groundPlatform = nil
 local activeZoneButton = nil
 local originalButtonText = ""
 local currentAnimTrack = nil
@@ -261,7 +259,6 @@ if LocalPlayer.Character then
 end
 LocalPlayer.CharacterAdded:Connect(applyBypass)
 
--- Tích hợp Anti-hit mới của bạn vào luồng chạy ngầm
 task.spawn(function()
     while true do
         task.wait(0.05)
@@ -281,9 +278,7 @@ end)
 
 local function stopTravel()
     isTraveling = false
-    if attachedPart then attachedPart:Destroy(); attachedPart = nil end
-    if activeBV then activeBV:Destroy(); activeBV = nil end
-    if activeBG then activeBG:Destroy(); activeBG = nil end
+    if groundPlatform then groundPlatform:Destroy(); groundPlatform = nil end
 
     if activeZoneButton then
         activeZoneButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -314,54 +309,41 @@ local function executeFlight(destinationPos)
     local cloneHum = character:FindFirstChild("HumanoidProxy")
     if not hrp or not cloneHum then return end
 
-    attachedPart = Instance.new("Part")
-    attachedPart.Name = "FootSafetyPlatform"
-    attachedPart.Size = Vector3.new(5, 1, 5)
-    attachedPart.Anchored = false
-    attachedPart.CanCollide = true
-    attachedPart.Transparency = 1
-    attachedPart.CFrame = hrp.CFrame - Vector3.new(0, 3.2, 0)
-    
-    local weld = Instance.new("WeldConstraint")
-    weld.Part0 = attachedPart
-    weld.Part1 = hrp
-    weld.Parent = attachedPart
-    attachedPart.Parent = workspace
+    groundPlatform = Instance.new("Part")
+    groundPlatform.Name = "FakeGroundPlatform"
+    groundPlatform.Size = Vector3.new(10, 1, 10)
+    groundPlatform.Anchored = true
+    groundPlatform.CanCollide = true
+    groundPlatform.Transparency = 1
+    groundPlatform.Material = Enum.Material.SmoothPlastic
+    groundPlatform.Parent = workspace
 
-    activeBV = Instance.new("BodyVelocity")
-    activeBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    activeBV.Velocity = Vector3.zero
-    activeBV.Parent = hrp
-
-    activeBG = Instance.new("BodyGyro")
-    activeBG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    activeBG.P = 90000
-    activeBG.CFrame = CFrame.lookAt(hrp.Position, destinationPos)
-    activeBG.Parent = hrp
-
-    local moveSpeed = 400
-    local startTime = tick()
+    local flySpeed = 420.0
     local targetFlat = Vector3.new(destinationPos.X, TARGET_Y, destinationPos.Z)
-    local distance = (targetFlat - hrp.Position).Magnitude
-    local estimatedTime = (distance / moveSpeed) + 0.4
 
     while isTraveling and character and hrp and cloneHum.Health > 0 do
         forceAnimation(character)
-        
-        cloneHum.WalkSpeed = 0
-        
-        local currentFlatPos = Vector3.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
-        if (targetFlat - currentFlatPos).Magnitude <= 5 or (tick() - startTime) > estimatedTime then
+        cloneHum:ChangeState(Enum.HumanoidStateType.Running)
+
+        local currentPos = hrp.Position
+        local currentFlatPos = Vector3.new(currentPos.X, TARGET_Y, currentPos.Z)
+        local distance = (targetFlat - currentFlatPos).Magnitude
+
+        if distance <= 4 then
             break
         end
-        local currentDir = (targetFlat - currentFlatPos).Unit
-        activeBV.Velocity = Vector3.new(currentDir.X * moveSpeed, 0, currentDir.Z * moveSpeed)
-        RunService.Heartbeat:Wait()
+
+        local direction = (targetFlat - currentFlatPos).Unit
+        local dt = RunService.Heartbeat:Wait()
+        local moveStep = direction * (flySpeed * dt)
+        local nextPos = currentPos + moveStep
+
+        groundPlatform.CFrame = CFrame.new(nextPos.X, TARGET_Y - 3.2, nextPos.Z)
+        hrp.CFrame = CFrame.new(nextPos, nextPos + direction)
+        hrp.AssemblyLinearVelocity = direction * flySpeed
     end
 
-    if activeBV then activeBV:Destroy(); activeBV = nil end
-    if activeBG then activeBG:Destroy(); activeBG = nil end
-    if attachedPart then attachedPart:Destroy(); attachedPart = nil end
+    if groundPlatform then groundPlatform:Destroy(); groundPlatform = nil end
 end
 
 local function moveToTarget(targetPosition, clickedButton, zoneName)
@@ -401,11 +383,10 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
 
     if isTraveling then
         local finalCFrame = CFrame.new(targetPosition)
-        local tpEndTime = tick() + 0.5
-        while isTraveling and tick() < tpEndTime and character and hrp do
+        local endTime = tick() + 0.15
+        while isTraveling and tick() < endTime and character and hrp do
             forceAnimation(character)
             hrp.AssemblyLinearVelocity = Vector3.zero
-            hrp.AssemblyAngularVelocity = Vector3.zero
             hrp.CFrame = finalCFrame
             if cloneHum then
                 cloneHum:ChangeState(Enum.HumanoidStateType.Running)
