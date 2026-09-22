@@ -1,4 +1,4 @@
-local TARGET_Y = 80.00
+local TARGET_Y = 75.00
 local FINAL_SAFE_ZONE = Vector3.new(549.39, TARGET_Y, -365.50)
 local SAFE_ESCAPE_POS = Vector3.new(547.54, TARGET_Y, -364.99)
 
@@ -29,7 +29,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Camera = Workspace.CurrentCamera
 
-local CUSTOM_SPEED = 270.0
+local CUSTOM_SPEED = 300.0
 local TARGET_ANIMATION_ID = "rbxassetid://180435571"
 
 for _, obj in ipairs(Workspace:GetDescendants()) do
@@ -318,7 +318,7 @@ local function executeFlight(destinationPos)
     groundPlatform.Material = Enum.Material.SmoothPlastic
     groundPlatform.Parent = workspace
 
-    local flySpeed = 420.0
+    local flySpeed = 430.0
     local targetFlat = Vector3.new(destinationPos.X, TARGET_Y, destinationPos.Z)
 
     while isTraveling and character and hrp and cloneHum.Health > 0 do
