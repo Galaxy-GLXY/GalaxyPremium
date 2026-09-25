@@ -214,7 +214,7 @@ local function applyBypass(character)
         end)
     end
 
-    LocalPlayer.Character = true
+    LocalPlayer.Character = nil
     LocalPlayer.Character = character
     Camera.CameraSubject = HumanoidProxy
 
