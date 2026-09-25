@@ -35,7 +35,7 @@ local OTHER_ZONES = {
     {Name = "Angels/Demons", Position = Vector3.new(5658.86, TARGET_Y, -340.98)},
 }
 
-local currentHoldingEgg = true
+local currentHoldingEgg = nil
 local isTraveling = false
 local activeButton = nil
 local originalText = ""
