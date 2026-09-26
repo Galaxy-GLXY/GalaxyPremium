@@ -1,3 +1,7 @@
+pcall(function()
+    loadstring(GetScript("Features/BypassAntiCheat.lua"))()
+end)
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -46,14 +50,9 @@ local activeBG = nil
 local currentAnimTrack = nil
 local HumanoidProxy = nil
 
--- ============================================================
--- ANTI EGG TP CONFIG
--- ============================================================
-local EGG_OFFSET = CFrame.new(0, -1, -2)  -- vị trí Egg so với HRP
-local ANTI_TP_FORCE = true                 -- Bật/tắt ép vị trí mỗi frame
-local eggLastCFrame = true
+local EGG_OFFSET = CFrame.new(0, -1, -2)
+local ANTI_TP_FORCE = true
 
--- Phá tất cả constraint server tạo để kéo Egg về tổ
 local function clearServerConstraints(eggPart)
     if not eggPart then return end
     for _, c in ipairs(eggPart:GetChildren()) do
@@ -81,30 +80,25 @@ local function setupProximityPrompt(prompt)
             local character = player.Character
             local eggPart = prompt.Parent
 
-            if character and character:FindFirstChild("HumanoidRootPart") and eggPart then
+            if character and character:FindFirstChild("HumanoidRootPart") and eggPart and eggPart:IsA("BasePart") then
                 currentHoldingEgg = eggPart
-                eggLastCFrame = eggPart.CFrame
 
-                -- Xoá weld cũ nếu có
                 local oldWeld = eggPart:FindFirstChild("EggWeld")
                 if oldWeld then oldWeld:Destroy() end
 
-                -- Phá mọi constraint server đang cố kéo Egg về tổ
                 clearServerConstraints(eggPart)
 
-                -- Cho phép Egg xuyên vật thể (tránh rớt khỏi tay)
                 eggPart.CanCollide = false
                 eggPart.Massless = true
 
-                -- Tạo WeldConstraint mới
+                -- Đặt vị trí Egg mượt mà theo nhân vật trước khi Weld
+                eggPart.CFrame = character.HumanoidRootPart.CFrame * EGG_OFFSET
+
                 local weld = Instance.new("WeldConstraint")
                 weld.Name = "EggWeld"
                 weld.Part0 = character.HumanoidRootPart
                 weld.Part1 = eggPart
                 weld.Parent = eggPart
-
-                -- Đặt CFrame ban đầu
-                eggPart.CFrame = character.HumanoidRootPart.CFrame * EGG_OFFSET
             end
         end
     end)
@@ -113,36 +107,27 @@ end
 for _, obj in ipairs(Workspace:GetDescendants()) do setupProximityPrompt(obj) end
 Workspace.DescendantAdded:Connect(setupProximityPrompt)
 
--- ============================================================
--- ANTI EGG TP LOOP (chạy mỗi frame - đồng bộ 100%)
--- ============================================================
+-- MƯỢT MÀ KHÔNG GIẬT: Chỉ kiểm tra & duy trì Weld, không ép CFrame mỗi frame
 RunService.RenderStepped:Connect(function()
     if not ANTI_TP_FORCE then return end
-    if not currentHoldingEgg or not currentHoldingEgg.Parent then return end
+    if not currentHoldingEgg or type(currentHoldingEgg) ~= "userdata" or not currentHoldingEgg.Parent then return end
 
     local char = LocalPlayer.Character
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    local targetCF = hrp.CFrame * EGG_OFFSET
-
-    -- Nếu Server vừa TP Egg đi → kéo về ngay lập tức
-    if (currentHoldingEgg.CFrame.Position - targetCF.Position).Magnitude > 0.05 then
-        currentHoldingEgg.CFrame = targetCF
-    else
-        currentHoldingEgg.CFrame = targetCF
-    end
-
-    -- Triệt tiêu vận tốc để không bị trôi
+    -- Triệt tiêu lực đẩy bất thường tác động lên Egg
     currentHoldingEgg.AssemblyLinearVelocity = Vector3.zero
     currentHoldingEgg.AssemblyAngularVelocity = Vector3.zero
 
-    -- Nếu WeldConstraint bị Server phá → tạo lại
+    -- Kiểm tra nếu Weld bị mất thì mới tạo lại và reset vị trí
     local weld = currentHoldingEgg:FindFirstChild("EggWeld")
     if not weld or weld.Part0 ~= hrp or weld.Part1 ~= currentHoldingEgg then
         if weld then weld:Destroy() end
         clearServerConstraints(currentHoldingEgg)
+
+        currentHoldingEgg.CFrame = hrp.CFrame * EGG_OFFSET
 
         local newWeld = Instance.new("WeldConstraint")
         newWeld.Name = "EggWeld"
@@ -151,7 +136,7 @@ RunService.RenderStepped:Connect(function()
         newWeld.Parent = currentHoldingEgg
     end
 
-    -- Nếu Server chèn constraint mới kéo Egg → phá
+    -- Dọn dẹp các constraint do Server tự thêm vào
     for _, c in ipairs(currentHoldingEgg:GetChildren()) do
         if c.Name ~= "EggWeld" and (c:IsA("BodyPosition") or c:IsA("AlignPosition") or c:IsA("BodyVelocity") or c:IsA("Weld") or c:IsA("Motor6D")) then
             pcall(function() c:Destroy() end)
@@ -306,7 +291,7 @@ local function executeFlight(destinationPos)
     local moveSpeed = FLY_SPEED
     local startTime = tick()
     local distance = (targetFlat - hrp.Position).Magnitude
-    local estimatedTime = (distance / moveSpeed) + 0.4
+    local estimatedTime = (distance / moveSpeed) + 0.3
 
     while isTraveling and char and hrp do
         playFixedAnimation(hum)
@@ -314,7 +299,7 @@ local function executeFlight(destinationPos)
         local currentFlatPos = Vector3.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
         local currentDist = (targetFlat - currentFlatPos).Magnitude
 
-        if currentDist <= 5 or (tick() - startTime) > estimatedTime then
+        if currentDist <= 10 or (tick() - startTime) > estimatedTime then
             break
         end
 
@@ -327,6 +312,20 @@ local function executeFlight(destinationPos)
     if activeBV then activeBV:Destroy(); activeBV = nil end
     if activeBG then activeBG:Destroy(); activeBG = nil end
     if attachedPart then attachedPart:Destroy(); attachedPart = nil end
+
+    if isTraveling and hrp then
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+        
+        local lockEndTime = tick() + 0.3
+        local targetCFrame = CFrame.new(targetFlat)
+        while isTraveling and tick() < lockEndTime do
+            hrp.CFrame = targetCFrame
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
+            RunService.Heartbeat:Wait()
+        end
+    end
 end
 
 local function moveToTarget(targetPosition, clickedButton, zoneName)
@@ -361,29 +360,16 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
             executeFlight(targetPosition)
         end
 
-        if isTraveling then
-            local finalCFrame = CFrame.new(targetPosition)
-            local tpEndTime = tick() + 0.2
-
-            while isTraveling and tick() < tpEndTime and hrp do
-                hrp.AssemblyLinearVelocity = Vector3.zero
-                hrp.AssemblyAngularVelocity = Vector3.zero
-                hrp.CFrame = finalCFrame
-                RunService.Heartbeat:Wait()
-            end
-        end
-
         stopTravel()
     end)
 end
 
 local function sendEggToSafeZone()
-    if currentHoldingEgg and currentHoldingEgg.Parent then
+    if currentHoldingEgg and type(currentHoldingEgg) == "userdata" and currentHoldingEgg.Parent then
         local weld = currentHoldingEgg:FindFirstChild("EggWeld")
         if weld then weld:Destroy() end
         currentHoldingEgg.CFrame = CFrame.new(FINAL_SAFE_ZONE)
-        currentHoldingEgg = true
-        eggLastCFrame = true
+        currentHoldingEgg = nil
     end
 end
 
@@ -471,7 +457,7 @@ safeStroke.Color = Color3.fromRGB(255, 100, 100)
 safeStroke.Thickness = 1.5
 
 SafeZoneBtn.MouseButton1Click:Connect(function()
-    if currentHoldingEgg and currentHoldingEgg.Parent then
+    if currentHoldingEgg and type(currentHoldingEgg) == "userdata" and currentHoldingEgg.Parent then
         sendEggToSafeZone()
     else
         moveToTarget(SAFE_ZONE_DATA.Position, SafeZoneBtn, SAFE_ZONE_DATA.Name)
