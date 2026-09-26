@@ -17,8 +17,7 @@ inputFrame.BorderSizePixel = 0
 inputFrame.Active = true
 inputFrame.Draggable = true
 
-local inputCorner = Instance.new("UICorner", inputFrame)
-inputCorner.CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", inputFrame).CornerRadius = UDim.new(0, 8)
 
 local inputTitle = Instance.new("TextLabel", inputFrame)
 inputTitle.Size = UDim2.new(1, -50, 0, 35)
@@ -69,9 +68,9 @@ Instance.new("UICorner", checkBtn).CornerRadius = UDim.new(0, 6)
 
 checkBtn.MouseButton1Click:Connect(function()
 	local input = inputBox.Text
-	local extractedUrl = input:match('"([^"]+)"') or input:match("'([^']+)'") or input:match("https?://%S+")
-	
-	if not extractedUrl then
+	local targetUrl = input:match('https?://[%w-_%.%?%a%d=%%%/]+') or input:match('https?://%S+')
+
+	if not targetUrl then
 		checkBtn.Text = "INVALID URL!"
 		checkBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 		task.wait(1.5)
@@ -82,9 +81,8 @@ checkBtn.MouseButton1Click:Connect(function()
 
 	inputGui:Destroy()
 
-	local url = extractedUrl
 	local success, raw = pcall(function()
-		return game:HttpGet(url)
+		return game:HttpGet(targetUrl)
 	end)
 
 	if not success then
@@ -92,9 +90,7 @@ checkBtn.MouseButton1Click:Connect(function()
 	end
 
 	local oldGui = parent:FindFirstChild("RawScriptViewer")
-	if oldGui then
-		oldGui:Destroy()
-	end
+	if oldGui then oldGui:Destroy() end
 
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "RawScriptViewer"
@@ -102,22 +98,17 @@ checkBtn.MouseButton1Click:Connect(function()
 	gui.IgnoreGuiInset = true
 	gui.Parent = parent
 
-	local frame = Instance.new("Frame")
-	frame.Parent = gui
+	local frame = Instance.new("Frame", gui)
 	frame.Size = UDim2.new(0.8, 0, 0.72, 0)
 	frame.Position = UDim2.new(0.1, 0, 0.14, 0)
 	frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 	frame.BorderSizePixel = 0
 	frame.Active = true
 	frame.Draggable = true
+	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
-	corner.Parent = frame
-
-	local title = Instance.new("TextLabel")
-	title.Parent = frame
-	title.Size = UDim2.new(1, -120, 0, 38)
+	local title = Instance.new("TextLabel", frame)
+	title.Size = UDim2.new(1, -180, 0, 38)
 	title.Position = UDim2.new(0, 12, 0, 0)
 	title.BackgroundTransparency = 1
 	title.Text = "RAW SCRIPT EDITOR"
@@ -126,22 +117,29 @@ checkBtn.MouseButton1Click:Connect(function()
 	title.TextSize = 14
 	title.TextXAlignment = Enum.TextXAlignment.Left
 
-	local wrapBtn = Instance.new("TextButton")
-	wrapBtn.Parent = frame
-	wrapBtn.Size = UDim2.new(0, 60, 0, 26)
-	wrapBtn.Position = UDim2.new(1, -105, 0, 6)
+	-- NÚT WRAP
+	local wrapBtn = Instance.new("TextButton", frame)
+	wrapBtn.Size = UDim2.new(0, 55, 0, 26)
+	wrapBtn.Position = UDim2.new(1, -165, 0, 6)
 	wrapBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	wrapBtn.Text = "WRAP"
 	wrapBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 	wrapBtn.Font = Enum.Font.Code
 	wrapBtn.TextSize = 12
+	Instance.new("UICorner", wrapBtn).CornerRadius = UDim.new(0, 4)
 
-	local wrapCorner = Instance.new("UICorner")
-	wrapCorner.CornerRadius = UDim.new(0, 4)
-	wrapCorner.Parent = wrapBtn
+	-- NÚT COPY (KẾ BÊN NÚT WRAP)
+	local copyBtn = Instance.new("TextButton", frame)
+	copyBtn.Size = UDim2.new(0, 55, 0, 26)
+	copyBtn.Position = UDim2.new(1, -105, 0, 6)
+	copyBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	copyBtn.Text = "COPY"
+	copyBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+	copyBtn.Font = Enum.Font.Code
+	copyBtn.TextSize = 12
+	Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 4)
 
-	local close = Instance.new("TextButton")
-	close.Parent = frame
+	local close = Instance.new("TextButton", frame)
 	close.Size = UDim2.new(0, 38, 0, 38)
 	close.Position = UDim2.new(1, -42, 0, 0)
 	close.BackgroundTransparency = 1
@@ -149,12 +147,9 @@ checkBtn.MouseButton1Click:Connect(function()
 	close.TextColor3 = Color3.fromRGB(255, 90, 90)
 	close.Font = Enum.Font.Code
 	close.TextSize = 20
-	close.MouseButton1Click:Connect(function()
-		gui:Destroy()
-	end)
+	close.MouseButton1Click:Connect(function() gui:Destroy() end)
 
-	local scrolling = Instance.new("ScrollingFrame")
-	scrolling.Parent = frame
+	local scrolling = Instance.new("ScrollingFrame", frame)
 	scrolling.Size = UDim2.new(1, -20, 1, -55)
 	scrolling.Position = UDim2.new(0, 10, 0, 45)
 	scrolling.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -163,8 +158,7 @@ checkBtn.MouseButton1Click:Connect(function()
 	scrolling.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	scrolling.CanvasSize = UDim2.new()
 
-	local source = Instance.new("TextBox")
-	source.Parent = scrolling
+	local source = Instance.new("TextBox", scrolling)
 	source.Size = UDim2.new(1, -12, 0, 0)
 	source.Position = UDim2.new(0, 6, 0, 6)
 	source.AutomaticSize = Enum.AutomaticSize.Y
@@ -185,5 +179,19 @@ checkBtn.MouseButton1Click:Connect(function()
 		isWrapped = not isWrapped
 		source.TextWrapped = isWrapped
 		wrapBtn.TextColor3 = isWrapped and Color3.fromRGB(0, 255, 150) or Color3.fromRGB(200, 200, 200)
+	end)
+
+	-- XỬ LÝ SỰ KIỆN SAO CHÉP
+	copyBtn.MouseButton1Click:Connect(function()
+		if setclipboard then
+			setclipboard(source.Text)
+		elseif toclipboard then
+			toclipboard(source.Text)
+		end
+		copyBtn.Text = "COPIED!"
+		copyBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
+		task.wait(1.5)
+		copyBtn.Text = "COPY"
+		copyBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 	end)
 end)
