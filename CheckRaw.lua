@@ -10,20 +10,18 @@ inputGui.IgnoreGuiInset = true
 inputGui.Parent = parent
 
 local inputFrame = Instance.new("Frame", inputGui)
-inputFrame.Size = UDim2.new(0, 450, 0, 260)
-inputFrame.Position = UDim2.new(0.5, -225, 0.5, -130)
+inputFrame.Size = UDim2.new(0, 420, 0, 240)
+inputFrame.Position = UDim2.new(0.5, -210, 0.5, -120)
 inputFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-inputFrame.BorderSizePixel = 0
 inputFrame.Active = true
 inputFrame.Draggable = true
-
 Instance.new("UICorner", inputFrame).CornerRadius = UDim.new(0, 8)
 
 local inputTitle = Instance.new("TextLabel", inputFrame)
-inputTitle.Size = UDim2.new(1, -50, 0, 35)
+inputTitle.Size = UDim2.new(1, -40, 0, 35)
 inputTitle.Position = UDim2.new(0, 12, 0, 0)
 inputTitle.BackgroundTransparency = 1
-inputTitle.Text = "RAW SCRIPT CHECKER"
+inputTitle.Text = "RAW CHECKER & DEOBFUSCATOR"
 inputTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 inputTitle.Font = Enum.Font.Code
 inputTitle.TextSize = 13
@@ -40,12 +38,12 @@ inputClose.TextSize = 18
 inputClose.MouseButton1Click:Connect(function() inputGui:Destroy() end)
 
 local inputBox = Instance.new("TextBox", inputFrame)
-inputBox.Size = UDim2.new(1, -24, 0, 120)
+inputBox.Size = UDim2.new(1, -24, 0, 110)
 inputBox.Position = UDim2.new(0, 12, 0, 40)
 inputBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 inputBox.TextColor3 = Color3.fromRGB(230, 230, 230)
 inputBox.Text = ""
-inputBox.PlaceholderText = 'Paste loadstring or URL here...'
+inputBox.PlaceholderText = 'Paste raw script, loadstring or URL...'
 inputBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 inputBox.Font = Enum.Font.Code
 inputBox.TextSize = 13
@@ -58,7 +56,7 @@ Instance.new("UICorner", inputBox).CornerRadius = UDim.new(0, 6)
 
 local checkBtn = Instance.new("TextButton", inputFrame)
 checkBtn.Size = UDim2.new(1, -24, 0, 40)
-checkBtn.Position = UDim2.new(0, 12, 0, 175)
+checkBtn.Position = UDim2.new(0, 12, 0, 160)
 checkBtn.BackgroundColor3 = Color3.fromRGB(0, 132, 255)
 checkBtn.Text = "CHECK RAW"
 checkBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -68,26 +66,18 @@ Instance.new("UICorner", checkBtn).CornerRadius = UDim.new(0, 6)
 
 checkBtn.MouseButton1Click:Connect(function()
 	local input = inputBox.Text
+	local raw = ""
+
 	local targetUrl = input:match('https?://[%w-_%.%?%a%d=%%%/]+') or input:match('https?://%S+')
-
-	if not targetUrl then
-		checkBtn.Text = "INVALID URL!"
-		checkBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-		task.wait(1.5)
-		checkBtn.Text = "CHECK RAW"
-		checkBtn.BackgroundColor3 = Color3.fromRGB(0, 132, 255)
-		return
+	if targetUrl then
+		local success, result = pcall(function() return game:HttpGet(targetUrl) end)
+		raw = success and result or ("Error fetching source:\n" .. tostring(result))
+	else
+		raw = input
 	end
 
+	if raw == "" then return end
 	inputGui:Destroy()
-
-	local success, raw = pcall(function()
-		return game:HttpGet(targetUrl)
-	end)
-
-	if not success then
-		raw = "Error fetching source:\n" .. tostring(raw)
-	end
 
 	local oldGui = parent:FindFirstChild("RawScriptViewer")
 	if oldGui then oldGui:Destroy() end
@@ -102,51 +92,50 @@ checkBtn.MouseButton1Click:Connect(function()
 	frame.Size = UDim2.new(0.8, 0, 0.72, 0)
 	frame.Position = UDim2.new(0.1, 0, 0.14, 0)
 	frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-	frame.BorderSizePixel = 0
 	frame.Active = true
 	frame.Draggable = true
 	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
 	local title = Instance.new("TextLabel", frame)
-	title.Size = UDim2.new(1, -180, 0, 38)
+	title.Size = UDim2.new(1, -220, 0, 38)
 	title.Position = UDim2.new(0, 12, 0, 0)
 	title.BackgroundTransparency = 1
-	title.Text = "RAW SCRIPT EDITOR"
+	title.Text = "SCRIPT VIEWER"
 	title.TextColor3 = Color3.fromRGB(255, 255, 255)
 	title.Font = Enum.Font.Code
 	title.TextSize = 14
 	title.TextXAlignment = Enum.TextXAlignment.Left
 
-	-- NÚT WRAP
-	local wrapBtn = Instance.new("TextButton", frame)
-	wrapBtn.Size = UDim2.new(0, 55, 0, 26)
-	wrapBtn.Position = UDim2.new(1, -165, 0, 6)
-	wrapBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	wrapBtn.Text = "WRAP"
-	wrapBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-	wrapBtn.Font = Enum.Font.Code
-	wrapBtn.TextSize = 12
-	Instance.new("UICorner", wrapBtn).CornerRadius = UDim.new(0, 4)
+	-- NÚT GIẢI MÃ DUY NHẤT (SMART DEOBF)
+	local deobfBtn = Instance.new("TextButton", frame)
+	deobfBtn.Size = UDim2.new(0, 110, 0, 26)
+	deobfBtn.Position = UDim2.new(1, -160, 0, 6)
+	deobfBtn.BackgroundColor3 = Color3.fromRGB(130, 50, 210)
+	deobfBtn.Text = "⚡ SMART DEOBF"
+	deobfBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	deobfBtn.Font = Enum.Font.Code
+	deobfBtn.TextSize = 11
+	Instance.new("UICorner", deobfBtn).CornerRadius = UDim.new(0, 4)
 
-	-- NÚT COPY (KẾ BÊN NÚT WRAP)
+	-- NÚT COPY
 	local copyBtn = Instance.new("TextButton", frame)
-	copyBtn.Size = UDim2.new(0, 55, 0, 26)
-	copyBtn.Position = UDim2.new(1, -105, 0, 6)
+	copyBtn.Size = UDim2.new(0, 50, 0, 26)
+	copyBtn.Position = UDim2.new(1, -95, 0, 6)
 	copyBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	copyBtn.Text = "COPY"
 	copyBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 	copyBtn.Font = Enum.Font.Code
-	copyBtn.TextSize = 12
+	copyBtn.TextSize = 11
 	Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 4)
 
 	local close = Instance.new("TextButton", frame)
 	close.Size = UDim2.new(0, 38, 0, 38)
-	close.Position = UDim2.new(1, -42, 0, 0)
+	close.Position = UDim2.new(1, -38, 0, 0)
 	close.BackgroundTransparency = 1
 	close.Text = "X"
 	close.TextColor3 = Color3.fromRGB(255, 90, 90)
 	close.Font = Enum.Font.Code
-	close.TextSize = 20
+	close.TextSize = 18
 	close.MouseButton1Click:Connect(function() gui:Destroy() end)
 
 	local scrolling = Instance.new("ScrollingFrame", frame)
@@ -169,25 +158,58 @@ checkBtn.MouseButton1Click:Connect(function()
 	source.Text = raw
 	source.TextColor3 = Color3.fromRGB(230, 230, 230)
 	source.Font = Enum.Font.Code
-	source.TextSize = 14
+	source.TextSize = 13
 	source.TextXAlignment = Enum.TextXAlignment.Left
 	source.TextYAlignment = Enum.TextYAlignment.Top
-	source.TextWrapped = false
+	source.TextWrapped = true
 
-	local isWrapped = false
-	wrapBtn.MouseButton1Click:Connect(function()
-		isWrapped = not isWrapped
-		source.TextWrapped = isWrapped
-		wrapBtn.TextColor3 = isWrapped and Color3.fromRGB(0, 255, 150) or Color3.fromRGB(200, 200, 200)
+	-- LOGIC GIẢI MÃ TỔNG HỢP TRONG 1 NÚT
+	deobfBtn.MouseButton1Click:Connect(function()
+		deobfBtn.Text = "DECODING..."
+		
+		-- Step 1: Decode Byte Escapes (\072 -> H)
+		local decodedText = source.Text:gsub("\\(%d%d%d)", function(code)
+			local num = tonumber(code)
+			return (num and num >= 0 and num <= 255) and string.char(num) or "\\" .. code
+		end)
+
+		-- Step 2: Hook loadstring to capture uncompressed execution
+		local captured = {}
+		local env = getfenv and getfenv() or _ENV
+		local fakeEnv = setmetatable({}, {
+			__index = function(_, k)
+				if k == "loadstring" then
+					return function(code)
+						table.insert(captured, "-- [CAPTURED LOADSTRING]:\n" .. tostring(code))
+						return function() end
+					end
+				end
+				return env[k]
+			end
+		})
+
+		local func = loadstring(decodedText)
+		if func then
+			setfenv(func, fakeEnv)
+			pcall(func)
+		end
+
+		-- Output Result
+		if #captured > 0 then
+			source.Text = table.concat(captured, "\n\n") .. "\n\n-- [DECODED STRINGS]:\n" .. decodedText
+		else
+			source.Text = decodedText
+		end
+
+		deobfBtn.Text = "SUCCESS!"
+		deobfBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+		task.wait(1.5)
+		deobfBtn.Text = "⚡ SMART DEOBF"
+		deobfBtn.BackgroundColor3 = Color3.fromRGB(130, 50, 210)
 	end)
 
-	-- XỬ LÝ SỰ KIỆN SAO CHÉP
 	copyBtn.MouseButton1Click:Connect(function()
-		if setclipboard then
-			setclipboard(source.Text)
-		elseif toclipboard then
-			toclipboard(source.Text)
-		end
+		if setclipboard then setclipboard(source.Text) elseif toclipboard then toclipboard(source.Text) end
 		copyBtn.Text = "COPIED!"
 		copyBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
 		task.wait(1.5)
