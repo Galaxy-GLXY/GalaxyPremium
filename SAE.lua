@@ -29,6 +29,10 @@ local SAFE_MAX_Z = -146.00
 local AUTO_STEAL_SAFE_POS = Vector3.new(549.39, TARGET_Y, -365.50)
 local AUTO_STEAL_RETURN_DELAY = 0.3
 
+local SAFE_MODE_Y_MIN = 110.00
+local SAFE_MODE_Y_MAX = 120.00
+local SAFE_MODE_SPEED = 1.0  
+
 local SAFE_ZONE_DATA = {Name = "Safe Zone", Position = FINAL_SAFE_ZONE, IsSafeZone = true}
 
 local OTHER_ZONES = {
@@ -57,6 +61,13 @@ local ANTI_TP_FORCE = true
 local autoStealActive = false
 local autoStealBusy = false
 local processedEggs = setmetatable({}, { __mode = "k" })
+
+-- Safe Mode variables
+local safeModeActive = false
+local safeModePart = nil
+local safeModeConnection = nil
+local safeModeY = SAFE_MODE_Y_MIN
+local safeModeDir = 1
 
 local function enforceSafeAttributes(char)
     if not char then return end
@@ -530,6 +541,166 @@ SafeZoneBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- ============================================================
+-- =============== SAFE MODE BUTTON (Draggable) ==============
+-- ============================================================
+local SafeModeContainer = Instance.new("Frame")
+SafeModeContainer.Name = "SafeModeContainer"
+SafeModeContainer.Size = UDim2.new(0, 150, 0, 40)
+SafeModeContainer.Position = UDim2.new(0, 20, 0, 130)   -- ✅ Góc chat (dưới icon chat)
+SafeModeContainer.BackgroundTransparency = 1
+SafeModeContainer.Parent = ScreenGui
+SafeModeContainer.ZIndex = 10
+
+local safeModeContainerStroke = Instance.new("UIStroke", SafeModeContainer)
+safeModeContainerStroke.Color = Color3.fromRGB(0, 255, 0)
+safeModeContainerStroke.Thickness = 3
+
+local SafeModeBtn = Instance.new("TextButton")
+SafeModeBtn.Name = "SafeModeBtn"
+SafeModeBtn.Size = UDim2.new(1, -10, 1, -10)
+SafeModeBtn.Position = UDim2.new(0, 5, 0, 5)
+SafeModeBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 60)
+SafeModeBtn.Text = "An Toàn"
+SafeModeBtn.TextColor3 = Color3.new(1, 1, 1)
+SafeModeBtn.TextSize = 12
+SafeModeBtn.Font = Enum.Font.GothamBold
+SafeModeBtn.TextWrapped = true
+SafeModeBtn.Parent = SafeModeContainer
+SafeModeBtn.ZIndex = 11
+
+Instance.new("UICorner", SafeModeBtn).CornerRadius = UDim.new(0, 6)
+
+-- Drag by border
+local safeModeDragging = false
+local safeModeDragStart = nil
+local safeModeStartPos = nil
+
+SafeModeContainer.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        local mousePos = Vector2.new(input.Position.X, input.Position.Y)
+        local innerPos = SafeModeBtn.AbsolutePosition
+        local innerSize = SafeModeBtn.AbsoluteSize
+
+        local isOnBorder = (mousePos.X < innerPos.X) or (mousePos.X > innerPos.X + innerSize.X)
+                          or (mousePos.Y < innerPos.Y) or (mousePos.Y > innerPos.Y + innerSize.Y)
+
+        if isOnBorder then
+            safeModeDragging = true
+            safeModeDragStart = input.Position
+            safeModeStartPos = SafeModeContainer.Position
+        end
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if safeModeDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - safeModeDragStart
+        SafeModeContainer.Position = UDim2.new(
+            safeModeStartPos.X.Scale, safeModeStartPos.X.Offset + delta.X,
+            safeModeStartPos.Y.Scale, safeModeStartPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        safeModeDragging = false
+    end
+end)
+
+-- Safe Mode functions
+local function startSafeMode()
+    if safeModeActive then return end
+    local char, hrp = getCharacter()
+    if not hrp then return end
+
+    safeModeActive = true
+    safeModeY = SAFE_MODE_Y_MIN
+    safeModeDir = 1
+
+    -- Lift to Y=100 instantly
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    hrp.AssemblyAngularVelocity = Vector3.zero
+    hrp.CFrame = CFrame.new(hrp.Position.X, safeModeY, hrp.Position.Z)
+
+    -- ✅ Part trong suốt hoàn toàn (extends to ground)
+    safeModePart = Instance.new("Part")
+    safeModePart.Name = "SafeModePart_Local"
+    safeModePart.Size = Vector3.new(20, 150, 20)   -- ✅ Dài hơn để luôn chạm đất
+    safeModePart.Anchored = true
+    safeModePart.CanCollide = false
+    safeModePart.CanQuery = false
+    safeModePart.CanTouch = false
+    safeModePart.Transparency = 1                  -- ✅ Trong suốt
+    safeModePart.Material = Enum.Material.SmoothPlastic
+    safeModePart.CFrame = CFrame.new(hrp.Position.X, safeModeY - 75, hrp.Position.Z)
+    safeModePart.Parent = Workspace
+
+    -- Oscillate Y between 100 and 120 at 1 stud/s
+    safeModeConnection = RunService.Heartbeat:Connect(function(dt)
+        if not safeModeActive then return end
+        if isTraveling or autoStealBusy then return end
+
+        local char, hrp = getCharacter()
+        if not hrp then return end
+
+        safeModeY = safeModeY + safeModeDir * SAFE_MODE_SPEED * dt
+        if safeModeY >= SAFE_MODE_Y_MAX then safeModeY = SAFE_MODE_Y_MAX; safeModeDir = -1 end
+        if safeModeY <= SAFE_MODE_Y_MIN then safeModeY = SAFE_MODE_Y_MIN; safeModeDir = 1 end
+
+        local curX = hrp.Position.X
+        local curZ = hrp.Position.Z
+
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+        hrp.CFrame = CFrame.new(curX, safeModeY, curZ)
+
+        if safeModePart and safeModePart.Parent then
+            safeModePart.CFrame = CFrame.new(curX, safeModeY - 75, curZ)
+        end
+    end)
+end
+
+local function stopSafeMode()
+    if not safeModeActive then return end
+    safeModeActive = false
+
+    if safeModeConnection then
+        safeModeConnection:Disconnect()
+        safeModeConnection = nil
+    end
+
+    if safeModePart then
+        safeModePart:Destroy()
+        safeModePart = nil
+    end
+
+    local char, hrp = getCharacter()
+    if hrp then
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+    end
+end
+
+SafeModeBtn.MouseButton1Click:Connect(function()
+    if safeModeActive then
+        stopSafeMode()
+        SafeModeBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 60)
+        safeModeContainerStroke.Color = Color3.fromRGB(0, 255, 0)
+        SafeModeBtn.Text = "An Toàn"
+    else
+        startSafeMode()
+        SafeModeBtn.BackgroundColor3 = Color3.fromRGB(220, 40, 40)
+        safeModeContainerStroke.Color = Color3.fromRGB(255, 100, 100)
+        SafeModeBtn.Text = "An Toàn: ON"
+    end
+end)
+-- ============================================================
+-- =============== END SAFE MODE BUTTON ======================
+-- ============================================================
+
+-- ===== AUTO STEAL =====
 task.spawn(function()
     while task.wait(0.1) do
         if not autoStealActive then continue end
@@ -571,6 +742,7 @@ task.spawn(function()
         autoStealBusy = false
     end
 end)
+-- ===== END AUTO STEAL =====
 
 local Separator = Instance.new("Frame")
 Separator.Size = UDim2.new(0, 2, 1, 0)
