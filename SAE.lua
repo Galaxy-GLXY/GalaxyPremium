@@ -13,9 +13,10 @@ local Camera = Workspace.CurrentCamera
 
 local TARGET_Y = 85.00
 local FLY_Y = 85.00
-local CUSTOM_SPEED = 300.0
-local FLY_SPEED = 600.0
 local TARGET_ANIMATION_ID = "rbxassetid://180435571"
+
+local SAFE_ZONE_WALK_SPEED = 600.0
+local OTHER_ZONE_WALK_SPEED = 600.0
 
 local FINAL_SAFE_ZONE = Vector3.new(549.39, TARGET_Y, -365.50)
 local SAFE_ESCAPE_POS = Vector3.new(547.54, TARGET_Y, -364.99)
@@ -25,18 +26,21 @@ local SAFE_MAX_X = 552.00
 local SAFE_MIN_Z = -582.00
 local SAFE_MAX_Z = -146.00
 
-local SAFE_ZONE_DATA = {Name = "Safe Zone (Steal)", Position = FINAL_SAFE_ZONE, IsSafeZone = true}
+local AUTO_STEAL_SAFE_POS = Vector3.new(549.39, TARGET_Y, -365.50)
+local AUTO_STEAL_RETURN_DELAY = 0.3
+
+local SAFE_ZONE_DATA = {Name = "Safe Zone", Position = FINAL_SAFE_ZONE, IsSafeZone = true}
 
 local OTHER_ZONES = {
-    {Name = "Jungle", Position = Vector3.new(1190.65, TARGET_Y, -397.29)},
-    {Name = "Snow", Position = Vector3.new(1490.13, TARGET_Y, -326.33)},
-    {Name = "Volcano", Position = Vector3.new(1883.90, TARGET_Y, -383.63)},
-    {Name = "Abyss Ocean", Position = Vector3.new(2280.29, TARGET_Y, -335.18)},
-    {Name = "Prehistoric", Position = Vector3.new(2816.63, TARGET_Y, -388.11)},
-    {Name = "Cosmic", Position = Vector3.new(3391.44, TARGET_Y, -335.10)},
-    {Name = "Cherry Blossom", Position = Vector3.new(4029.82, TARGET_Y, -388.07)},
-    {Name = "Titan Temple", Position = Vector3.new(4797.82, TARGET_Y, -339.47)},
-    {Name = "Angels/Demons", Position = Vector3.new(5658.86, TARGET_Y, -340.98)},
+    {Name = "Jungle",          Position = Vector3.new(1188.33, TARGET_Y, -411.97)},
+    {Name = "Snow",            Position = Vector3.new(1491.05, TARGET_Y, -311.35)},
+    {Name = "Volcano",         Position = Vector3.new(1878.24, TARGET_Y, -402.08)},
+    {Name = "Abyss Ocean",     Position = Vector3.new(2281.41, TARGET_Y, -322.72)},
+    {Name = "Prehistoric",     Position = Vector3.new(2812.95, TARGET_Y, -402.20)},
+    {Name = "Cosmic",          Position = Vector3.new(3392.38, TARGET_Y, -320.73)},
+    {Name = "Cherry Blossom",  Position = Vector3.new(4028.07, TARGET_Y, -400.72)},
+    {Name = "Titan Temple",    Position = Vector3.new(4797.41, TARGET_Y, -324.84)},
+    {Name = "Angels/Demons",   Position = Vector3.new(5661.74, TARGET_Y, -324.21)},
 }
 
 local currentHoldingEgg = nil
@@ -44,14 +48,40 @@ local isTraveling = false
 local activeButton = nil
 local originalText = ""
 
-local attachedPart = nil
-local activeBV = nil
-local activeBG = nil
 local currentAnimTrack = nil
 local HumanoidProxy = nil
 
 local EGG_OFFSET = CFrame.new(0, -1, -2)
 local ANTI_TP_FORCE = true
+
+local autoStealActive = false
+local autoStealBusy = false
+local processedEggs = setmetatable({}, { __mode = "k" })
+
+local function enforceSafeAttributes(char)
+    if not char then return end
+    if char:GetAttribute("Ragdoll") ~= false then char:SetAttribute("Ragdoll", false) end
+    if char:GetAttribute("IsRagdolled") ~= false then char:SetAttribute("IsRagdolled", false) end
+    if char:GetAttribute("RagdollEndTime") ~= 0 then char:SetAttribute("RagdollEndTime", 0) end
+end
+
+local function applyAntiHit(character)
+    if not character then return end
+    enforceSafeAttributes(character)
+    character.AttributeChanged:Connect(function(attr)
+        if attr == "Ragdoll" or attr == "IsRagdolled" or attr == "RagdollEndTime" then
+            enforceSafeAttributes(character)
+        end
+    end)
+end
+
+if LocalPlayer.Character then applyAntiHit(LocalPlayer.Character) end
+LocalPlayer.CharacterAdded:Connect(applyAntiHit)
+
+RunService.Stepped:Connect(function()
+    local char = LocalPlayer.Character
+    if char then enforceSafeAttributes(char) end
+end)
 
 local function clearServerConstraints(eggPart)
     if not eggPart then return end
@@ -91,7 +121,6 @@ local function setupProximityPrompt(prompt)
                 eggPart.CanCollide = false
                 eggPart.Massless = true
 
-                -- Đặt vị trí Egg mượt mà theo nhân vật trước khi Weld
                 eggPart.CFrame = character.HumanoidRootPart.CFrame * EGG_OFFSET
 
                 local weld = Instance.new("WeldConstraint")
@@ -107,7 +136,6 @@ end
 for _, obj in ipairs(Workspace:GetDescendants()) do setupProximityPrompt(obj) end
 Workspace.DescendantAdded:Connect(setupProximityPrompt)
 
--- MƯỢT MÀ KHÔNG GIẬT: Chỉ kiểm tra & duy trì Weld, không ép CFrame mỗi frame
 RunService.RenderStepped:Connect(function()
     if not ANTI_TP_FORCE then return end
     if not currentHoldingEgg or type(currentHoldingEgg) ~= "userdata" or not currentHoldingEgg.Parent then return end
@@ -117,11 +145,9 @@ RunService.RenderStepped:Connect(function()
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    -- Triệt tiêu lực đẩy bất thường tác động lên Egg
     currentHoldingEgg.AssemblyLinearVelocity = Vector3.zero
     currentHoldingEgg.AssemblyAngularVelocity = Vector3.zero
 
-    -- Kiểm tra nếu Weld bị mất thì mới tạo lại và reset vị trí
     local weld = currentHoldingEgg:FindFirstChild("EggWeld")
     if not weld or weld.Part0 ~= hrp or weld.Part1 ~= currentHoldingEgg then
         if weld then weld:Destroy() end
@@ -136,7 +162,6 @@ RunService.RenderStepped:Connect(function()
         newWeld.Parent = currentHoldingEgg
     end
 
-    -- Dọn dẹp các constraint do Server tự thêm vào
     for _, c in ipairs(currentHoldingEgg:GetChildren()) do
         if c.Name ~= "EggWeld" and (c:IsA("BodyPosition") or c:IsA("AlignPosition") or c:IsA("BodyVelocity") or c:IsA("Weld") or c:IsA("Motor6D")) then
             pcall(function() c:Destroy() end)
@@ -154,14 +179,7 @@ local function getCharacter()
     return char, hrp, hum
 end
 
-local function setAnimateEnabled(character, enabled)
-    local animateScript = character:FindFirstChild("Animate")
-    if animateScript and animateScript:IsA("LocalScript") then
-        animateScript.Disabled = not enabled
-    end
-end
-
-local function playFixedAnimation(humanoid)
+local function playRunAnimation(humanoid)
     if not humanoid then return end
     local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
     if not currentAnimTrack or not currentAnimTrack.IsPlaying then
@@ -171,9 +189,11 @@ local function playFixedAnimation(humanoid)
             end
         end
         local anim = Instance.new("Animation")
+        anim.Name = "Animation1"
         anim.AnimationId = TARGET_ANIMATION_ID
         currentAnimTrack = animator:LoadAnimation(anim)
         currentAnimTrack.Looped = true
+        currentAnimTrack.Priority = Enum.AnimationPriority.Movement
         currentAnimTrack:Play()
     end
 end
@@ -204,23 +224,14 @@ local function applyBypass(character)
     Camera.CameraSubject = HumanoidProxy
 
     RunService.RenderStepped:Connect(function(dt)
-        if not HumanoidProxy or HumanoidProxy.Health <= 0 or isTraveling then return end
+        if not HumanoidProxy or HumanoidProxy.Health <= 0 then return end
+        if autoStealBusy then return end
         local _, hrp, _ = getCharacter()
         if not hrp then return end
 
         HumanoidProxy.Health = HumanoidProxy.MaxHealth
-
-        local moveDir = HumanoidProxy.MoveDirection
-        if moveDir.Magnitude > 0 then
-            hrp.CFrame = hrp.CFrame + (moveDir * CUSTOM_SPEED * dt)
-        end
-
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) and hrp.Position.Y <= TARGET_Y + 5 then
-            hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 50, hrp.AssemblyLinearVelocity.Z)
-        end
-
         HumanoidProxy:ChangeState(Enum.HumanoidStateType.Running)
-        playFixedAnimation(HumanoidProxy)
+        playRunAnimation(HumanoidProxy)
     end)
 end
 
@@ -230,20 +241,9 @@ LocalPlayer.CharacterAdded:Connect(applyBypass)
 local function stopTravel()
     isTraveling = false
 
-    if attachedPart then attachedPart:Destroy(); attachedPart = nil end
-    if activeBV then activeBV:Destroy(); activeBV = nil end
-    if activeBG then activeBG:Destroy(); activeBG = nil end
-
     if currentAnimTrack then currentAnimTrack:Stop(0); currentAnimTrack = nil end
 
-    local char, hrp, hum = getCharacter()
-    if char then setAnimateEnabled(char, true) end
-    if hrp then
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
-    end
-
-    if activeButton then
+    if activeButton and activeButton.Name ~= "AutoStealButton" then
         activeButton.Text = originalText
         if activeButton.Name == "SafeZoneButton" then
             activeButton.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
@@ -251,84 +251,97 @@ local function stopTravel()
             activeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         end
         activeButton = nil
+    elseif activeButton then
+        activeButton.Text = originalText
+        activeButton = nil
     end
 end
 
-local function executeFlight(destinationPos)
+local function walkToTarget(destinationPos, speed)
     local char, hrp, hum = getCharacter()
     if not char or not hrp or not hum then return end
 
-    setAnimateEnabled(char, false)
+    local walkHum = HumanoidProxy or hum
+    if not walkHum then return end
 
-    attachedPart = Instance.new("Part")
-    attachedPart.Name = "FootSafetyPlatform"
-    attachedPart.Size = Vector3.new(5, 1, 5)
-    attachedPart.Anchored = false
-    attachedPart.CanCollide = true
-    attachedPart.Transparency = 1
-    attachedPart.CFrame = hrp.CFrame - Vector3.new(0, 3.2, 0)
-
-    local weld = Instance.new("WeldConstraint")
-    weld.Part0 = attachedPart
-    weld.Part1 = hrp
-    weld.Parent = attachedPart
-    attachedPart.Parent = Workspace
-
-    activeBV = Instance.new("BodyVelocity")
-    activeBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    activeBV.Velocity = Vector3.zero
-    activeBV.Parent = hrp
+    speed = speed or OTHER_ZONE_WALK_SPEED
 
     local targetFlat = Vector3.new(destinationPos.X, TARGET_Y, destinationPos.Z)
-    local flyDir = (targetFlat - Vector3.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)).Unit
 
-    activeBG = Instance.new("BodyGyro")
-    activeBG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    activeBG.P = 90000
-    activeBG.CFrame = CFrame.lookAt(hrp.Position, hrp.Position + Vector3.new(flyDir.X, 0, flyDir.Z))
-    activeBG.Parent = hrp
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    hrp.AssemblyAngularVelocity = Vector3.zero
+    hrp.CFrame = CFrame.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
 
-    local moveSpeed = FLY_SPEED
-    local startTime = tick()
-    local distance = (targetFlat - hrp.Position).Magnitude
-    local estimatedTime = (distance / moveSpeed) + 0.3
+    local platform = Instance.new("Part")
+    platform.Name = "WalkPlatform"
+    platform.Size = Vector3.new(20, 4, 20)
+    platform.Anchored = true
+    platform.CanCollide = true
+    platform.CanQuery = false
+    platform.CanTouch = false
+    platform.Transparency = 1
+    platform.Material = Enum.Material.SmoothPlastic
+    platform.CFrame = CFrame.new(hrp.Position.X, TARGET_Y - 5, hrp.Position.Z)
+    platform.Parent = Workspace
 
-    while isTraveling and char and hrp do
-        playFixedAnimation(hum)
+    local loopConn = RunService.RenderStepped:Connect(function(dt)
+        if not hrp or not hrp.Parent then return end
+        if not platform or not platform.Parent then return end
 
-        local currentFlatPos = Vector3.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
-        local currentDist = (targetFlat - currentFlatPos).Magnitude
+        platform.CFrame = CFrame.new(hrp.Position.X, TARGET_Y - 5, hrp.Position.Z)
 
-        if currentDist <= 10 or (tick() - startTime) > estimatedTime then
-            break
+        local currentPos = hrp.Position
+        local deltaX = targetFlat.X - currentPos.X
+        local deltaZ = targetFlat.Z - currentPos.Z
+        local distToTarget = math.sqrt(deltaX * deltaX + deltaZ * deltaZ)
+
+        if distToTarget > 0.1 then
+            local dirX = deltaX / distToTarget
+            local dirZ = deltaZ / distToTarget
+            local stepDist = math.min(speed * dt, distToTarget)
+            local newX = currentPos.X + dirX * stepDist
+            local newZ = currentPos.Z + dirZ * stepDist
+
+            local rot = hrp.CFrame - hrp.CFrame.Position
+            hrp.CFrame = CFrame.new(newX, TARGET_Y, newZ) * rot
         end
 
-        local currentDir = (targetFlat - currentFlatPos).Unit
-        activeBV.Velocity = Vector3.new(currentDir.X * moveSpeed, 0, currentDir.Z * moveSpeed)
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+    end)
+
+    local startTime = tick()
+
+    while isTraveling and char and hrp and walkHum.Health > 0 do
+        if currentAnimTrack then
+            currentAnimTrack:Stop(0)
+            currentAnimTrack = nil
+        end
+
+        local currentPos = Vector3.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
+        local dist = (targetFlat - currentPos).Magnitude
+        if dist <= 3 then break end
+        if tick() - startTime > 90 then break end
 
         RunService.Heartbeat:Wait()
     end
 
-    if activeBV then activeBV:Destroy(); activeBV = nil end
-    if activeBG then activeBG:Destroy(); activeBG = nil end
-    if attachedPart then attachedPart:Destroy(); attachedPart = nil end
-
-    if isTraveling and hrp then
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
-        
-        local lockEndTime = tick() + 0.3
-        local targetCFrame = CFrame.new(targetFlat)
-        while isTraveling and tick() < lockEndTime do
-            hrp.CFrame = targetCFrame
+    local stopEnd = tick() + 0.2
+    while tick() < stopEnd do
+        if hrp and hrp.Parent then
             hrp.AssemblyLinearVelocity = Vector3.zero
             hrp.AssemblyAngularVelocity = Vector3.zero
-            RunService.Heartbeat:Wait()
+            local rot = hrp.CFrame - hrp.CFrame.Position
+            hrp.CFrame = CFrame.new(hrp.Position.X, TARGET_Y, hrp.Position.Z) * rot
         end
+        RunService.Heartbeat:Wait()
     end
+
+    loopConn:Disconnect()
+    if platform then platform:Destroy() end
 end
 
-local function moveToTarget(targetPosition, clickedButton, zoneName)
+local function moveToTarget(targetPosition, clickedButton, zoneName, speed)
     if isTraveling then
         stopTravel()
         return
@@ -346,6 +359,7 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
 
     task.spawn(function()
         hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
         hrp.CFrame = CFrame.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
 
         local currentPos = hrp.Position
@@ -353,11 +367,11 @@ local function moveToTarget(targetPosition, clickedButton, zoneName)
                              (currentPos.Z >= SAFE_MIN_Z and currentPos.Z <= SAFE_MAX_Z)
 
         if isInSafeZone then
-            executeFlight(SAFE_ESCAPE_POS)
+            walkToTarget(SAFE_ESCAPE_POS, speed)
         end
 
         if isTraveling then
-            executeFlight(targetPosition)
+            walkToTarget(targetPosition, speed)
         end
 
         stopTravel()
@@ -439,10 +453,51 @@ MinimizeButton.MouseButton1Click:Connect(function()
     end
 end)
 
+local AutoStealBtn = Instance.new("TextButton")
+AutoStealBtn.Name = "AutoStealButton"
+AutoStealBtn.Size = UDim2.new(0, 110, 0.5, -2)
+AutoStealBtn.Position = UDim2.new(0, 0, 0, 0)
+AutoStealBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 60)
+AutoStealBtn.Text = "Auto Steal"
+AutoStealBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AutoStealBtn.TextSize = 13
+AutoStealBtn.Font = Enum.Font.GothamBold
+AutoStealBtn.TextWrapped = true
+AutoStealBtn.Parent = BodyContainer
+
+Instance.new("UICorner", AutoStealBtn).CornerRadius = UDim.new(0, 10)
+local autoStealStroke = Instance.new("UIStroke", AutoStealBtn)
+autoStealStroke.Color = Color3.fromRGB(100, 255, 120)
+autoStealStroke.Thickness = 1.5
+
+AutoStealBtn.MouseButton1Click:Connect(function()
+    autoStealActive = not autoStealActive
+    if autoStealActive then
+        AutoStealBtn.BackgroundColor3 = Color3.fromRGB(220, 40, 40)
+        autoStealStroke.Color = Color3.fromRGB(255, 100, 100)
+        AutoStealBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        AutoStealBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 60)
+        autoStealStroke.Color = Color3.fromRGB(100, 255, 120)
+        processedEggs = setmetatable({}, { __mode = "k" })
+    end
+end)
+
+task.spawn(function()
+    local hue = 0
+    while AutoStealBtn and AutoStealBtn.Parent do
+        if not autoStealActive then
+            hue = (hue + 0.008) % 1
+            AutoStealBtn.TextColor3 = Color3.fromHSV(hue, 1, 1)
+        end
+        task.wait(0.03)
+    end
+end)
+
 local SafeZoneBtn = Instance.new("TextButton")
 SafeZoneBtn.Name = "SafeZoneButton"
-SafeZoneBtn.Size = UDim2.new(0, 110, 1, 0)
-SafeZoneBtn.Position = UDim2.new(0, 0, 0, 0)
+SafeZoneBtn.Size = UDim2.new(0, 110, 0.5, -2)
+SafeZoneBtn.Position = UDim2.new(0, 0, 0.5, 2)
 SafeZoneBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
 SafeZoneBtn.Text = SAFE_ZONE_DATA.Name
 SafeZoneBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -456,11 +511,64 @@ local safeStroke = Instance.new("UIStroke", SafeZoneBtn)
 safeStroke.Color = Color3.fromRGB(255, 100, 100)
 safeStroke.Thickness = 1.5
 
+task.spawn(function()
+    local hue = 0
+    while SafeZoneBtn and SafeZoneBtn.Parent do
+        if activeButton ~= SafeZoneBtn then
+            hue = (hue + 0.008) % 1
+            SafeZoneBtn.TextColor3 = Color3.fromHSV(hue, 1, 1)
+        end
+        task.wait(0.03)
+    end
+end)
+
 SafeZoneBtn.MouseButton1Click:Connect(function()
     if currentHoldingEgg and type(currentHoldingEgg) == "userdata" and currentHoldingEgg.Parent then
         sendEggToSafeZone()
     else
-        moveToTarget(SAFE_ZONE_DATA.Position, SafeZoneBtn, SAFE_ZONE_DATA.Name)
+        moveToTarget(SAFE_ZONE_DATA.Position, SafeZoneBtn, SAFE_ZONE_DATA.Name, SAFE_ZONE_WALK_SPEED)
+    end
+end)
+
+task.spawn(function()
+    while task.wait(0.1) do
+        if not autoStealActive then continue end
+        if autoStealBusy then continue end
+        if isTraveling then continue end
+        if not currentHoldingEgg or type(currentHoldingEgg) ~= "userdata" or not currentHoldingEgg.Parent then continue end
+        if processedEggs[currentHoldingEgg] then continue end
+
+        processedEggs[currentHoldingEgg] = true
+        autoStealBusy = true
+
+        local char, hrp = getCharacter()
+        if hrp then
+            local savedHRPCF = hrp.CFrame
+            local savedCamCF = Camera.CFrame
+            local savedCamSubject = Camera.CameraSubject
+
+            Camera.CameraType = Enum.CameraType.Scriptable
+            Camera.CFrame = savedCamCF
+            Camera.CameraSubject = nil
+
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
+            hrp.CFrame = CFrame.new(AUTO_STEAL_SAFE_POS)
+
+            task.wait(AUTO_STEAL_RETURN_DELAY)
+
+            if hrp and hrp.Parent then
+                hrp.AssemblyLinearVelocity = Vector3.zero
+                hrp.AssemblyAngularVelocity = Vector3.zero
+                hrp.CFrame = savedHRPCF
+            end
+
+            Camera.CameraSubject = HumanoidProxy or char:FindFirstChildOfClass("Humanoid")
+            Camera.CameraType = Enum.CameraType.Custom
+        end
+
+        task.wait(0.3)
+        autoStealBusy = false
     end
 end)
 
@@ -502,7 +610,7 @@ for _, zone in ipairs(OTHER_ZONES) do
     bStroke.Thickness = 1.5
 
     btn.MouseButton1Click:Connect(function()
-        moveToTarget(zone.Position, btn, zone.Name)
+        moveToTarget(zone.Position, btn, zone.Name, OTHER_ZONE_WALK_SPEED)
     end)
 end
 
