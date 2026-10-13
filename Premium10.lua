@@ -95,30 +95,215 @@ local function StartIntro()
     GiveNoclip()
 end
 
-local Main = Instance.new("Frame", G); Main.Visible = false; Main.Size = UDim2.new(0, 220, 0, 520); Main.Position = UDim2.new(0.5, -230, 0.3, 0); Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.Active = true; Main.Draggable = true; Instance.new("UIStroke", Main).Color = NeonRed
-local SubMenu = Instance.new("Frame", G); SubMenu.Visible = false; SubMenu.Size = UDim2.new(0, 200, 0, 260); SubMenu.Position = UDim2.new(0.5, 10, 0.3, 0); SubMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15); SubMenu.Active = true; SubMenu.Draggable = true; Instance.new("UIStroke", SubMenu).Color = NeonRed
+-- MENU CHÍNH GỌN HƠN (400 x 275)
+local Main = Instance.new("Frame", G)
+Main.Visible = false
+Main.Size = UDim2.new(0, 400, 0, 275)
+Main.Position = UDim2.new(0.5, -200, 0.3, 0)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+local MainRainbowStroke = Instance.new("UIStroke", Main)
+MainRainbowStroke.Thickness = 3
 
-local TPMenu = Instance.new("Frame", G); TPMenu.Visible = false; TPMenu.Size = UDim2.new(0, 200, 0, 110); TPMenu.Position = UDim2.new(0.5, 10, 0.6, 0); TPMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15); TPMenu.Active = true; TPMenu.Draggable = true; Instance.new("UIStroke", TPMenu).Color = NeonRed
+task.spawn(function()
+    local hue = 0
+    while Main and Main.Parent do
+        hue = (hue + 0.005) % 1
+        MainRainbowStroke.Color = Color3.fromHSV(hue, 1, 1)
+        task.wait(0.03)
+    end
+end)
+
+-- PLAYER TOOL MENU (200 x 185)
+local SubMenu = Instance.new("Frame", G)
+SubMenu.Visible = false
+SubMenu.Size = UDim2.new(0, 200, 0, 185)
+SubMenu.Position = UDim2.new(0.5, 205, 0.3, 0)
+SubMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+SubMenu.Active = true
+SubMenu.Draggable = true
+Instance.new("UICorner", SubMenu).CornerRadius = UDim.new(0, 10)
+local SubRainbowStroke = Instance.new("UIStroke", SubMenu)
+SubRainbowStroke.Thickness = 3
+
+task.spawn(function()
+    local hue = 0
+    while SubMenu and SubMenu.Parent do
+        hue = (hue + 0.005) % 1
+        SubRainbowStroke.Color = Color3.fromHSV(hue, 1, 1)
+        task.wait(0.03)
+    end
+end)
+
+-- TP NEAREST TOOL MENU
+local TPMenu = Instance.new("Frame", G)
+TPMenu.Visible = false
+TPMenu.Size = UDim2.new(0, 200, 0, 100)
+TPMenu.Position = UDim2.new(0.5, 205, 0.52, 0)
+TPMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+TPMenu.Active = true
+TPMenu.Draggable = true
+Instance.new("UICorner", TPMenu).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", TPMenu).Color = NeonRed
 
 local function CreateTitle(p, txt)
-    local T = Instance.new("TextLabel", p); T.Size = UDim2.new(1, 0, 0, 40); T.BackgroundColor3 = NeonRed; T.Text = txt; T.TextColor3 = Color3.new(1,1,1); T.Font = Enum.Font.SourceSansBold; T.TextSize = 16
+    local T = Instance.new("TextLabel", p)
+    T.Size = UDim2.new(1, 0, 0, 32)
+    T.BackgroundColor3 = NeonRed
+    T.Text = txt
+    T.TextColor3 = Color3.new(1,1,1)
+    T.Font = Enum.Font.SourceSansBold
+    T.TextSize = 14
+    Instance.new("UICorner", T).CornerRadius = UDim.new(0, 10)
 end
-CreateTitle(Main, "GALAXY Premium ")
+
+CreateTitle(Main, "GALAXY Premium")
 CreateTitle(SubMenu, "PLAYER TOOL")
 CreateTitle(TPMenu, "TP NEAREST TOOL")
 
-local function AddSubBtn(n, y, c)
-    local b = Instance.new("TextButton", SubMenu); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 14
-    local s = false; b.MouseButton1Click:Connect(function() s = not s; b.Text = n..(s and ": ON" or ": OFF"); b.TextColor3 = s and NeonRed or Color3.new(1,1,1); c(s) end)
-end
+-- KHU VỰC BÊN TRÁI (TỐC ĐỘ)
+local LeftContainer = Instance.new("Frame", Main)
+LeftContainer.Size = UDim2.new(0, 115, 1, -72)
+LeftContainer.Position = UDim2.new(0, 8, 0, 38)
+LeftContainer.BackgroundTransparency = 1
+
+local Inp = Instance.new("TextBox", LeftContainer)
+Inp.Size = UDim2.new(1, 0, 0, 38)
+Inp.Position = UDim2.new(0, 0, 0, 8)
+Inp.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Inp.PlaceholderText = "TỐC ĐỘ..."
+Inp.Text = "TỐC ĐỘ (16)"
+Inp.TextColor3 = NeonRed
+Inp.Font = Enum.Font.SourceSansBold
+Inp.TextSize = 13
+Instance.new("UIStroke", Inp).Color = NeonRed
+Instance.new("UICorner", Inp).CornerRadius = UDim.new(0, 6)
+
+Inp.FocusLost:Connect(function(enterPressed)
+    local val = tonumber(Inp.Text)
+    if val then
+        _G.Speed = val
+        Inp.Text = "TỐC ĐỘ ("..tostring(val)..")"
+    else
+        Inp.Text = "TỐC ĐỘ ("..tostring(_G.Speed)..")"
+    end
+end)
+
+-- KHU VỰC BÊN PHẢI (THỨ TỰ MỚI: SMART AIM, FLY MODE, PLAYER ESP, PLAYER NEAREST, PLAYER TOOL, TP TO VOID)
+local RightContainer = Instance.new("Frame", Main)
+RightContainer.Size = UDim2.new(0, 260, 1, -72)
+RightContainer.Position = UDim2.new(0, 130, 0, 38)
+RightContainer.BackgroundTransparency = 1
 
 local function AddMainBtn(n, y, c)
-    local b = Instance.new("TextButton", Main); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 18
-    local s = false; b.MouseButton1Click:Connect(function() s = not s; b.Text = n..(s and ": ON" or ": OFF"); b.TextColor3 = s and NeonRed or Color3.new(1,1,1); c(s) end)
+    local b = Instance.new("TextButton", RightContainer)
+    b.Size = UDim2.new(1, 0, 0, 31)
+    b.Position = UDim2.new(0, 0, 0, y)
+    b.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    b.Text = n..": OFF"
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.SourceSansBold
+    b.TextSize = 13
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIStroke", b).Color = Color3.fromRGB(50,50,50)
+    
+    local s = false
+    b.MouseButton1Click:Connect(function()
+        s = not s
+        b.Text = n..(s and ": ON" or ": OFF")
+        b.TextColor3 = s and NeonRed or Color3.new(1,1,1)
+        c(s)
+    end)
 end
 
-local NameBox = Instance.new("TextBox", SubMenu); NameBox.Size = UDim2.new(1, -20, 0, 40); NameBox.Position = UDim2.new(0, 10, 0, 50); NameBox.BackgroundColor3 = Color3.fromRGB(30,30,30); NameBox.PlaceholderText = "Tên người chơi..."; NameBox.Text = ""; NameBox.TextColor3 = Color3.new(1,1,1); NameBox.Font = Enum.Font.SourceSansBold; NameBox.TextSize = 14; Instance.new("UIStroke", NameBox).Color = NeonRed
+AddMainBtn("SMART AIM", 0, function(v) _G.Aim = v end)
+AddMainBtn("FLY MODE", 35, function(v) _G.Fly = v end)
+AddMainBtn("PLAYER ESP", 70, function(v) _G.ESP = v end)
+AddMainBtn("PLAYER NEAREST", 105, function(v) TPMenu.Visible = v end)
+AddMainBtn("PLAYER TOOL", 140, function(v) SubMenu.Visible = v end)
+AddMainBtn("TP TO VOID", 175, function(v) 
+    _G.VoidActive = v 
+    if v and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
+        LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
+        if not CurrentVoidPlate then
+            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
+        end
+        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -501, LP.Character.HumanoidRootPart.Position.Z)
+        LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
+    elseif not v and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
+        LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0)
+    end 
+end)
+
+-- NÚT HỦY SCRIPT DƯỚI CÙNG
+local Close = Instance.new("TextButton", Main)
+Close.Size = UDim2.new(1, -16, 0, 28)
+Close.Position = UDim2.new(0, 8, 1, -32)
+Close.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+Close.Text = "HỦY SCRIPT"
+Close.TextColor3 = Color3.new(1,1,1)
+Close.Font = Enum.Font.SourceSansBold
+Close.TextSize = 13
+Instance.new("UICorner", Close).CornerRadius = UDim.new(0, 6)
+
+-- SubMenu (Player Tool) Elements
+local NameBox = Instance.new("TextBox", SubMenu)
+NameBox.Size = UDim2.new(1, -16, 0, 32)
+NameBox.Position = UDim2.new(0, 8, 0, 38)
+NameBox.BackgroundColor3 = Color3.fromRGB(30,30,30)
+NameBox.PlaceholderText = "Tên người chơi..."
+NameBox.Text = ""
+NameBox.TextColor3 = Color3.new(1,1,1)
+NameBox.Font = Enum.Font.SourceSansBold
+NameBox.TextSize = 12
+Instance.new("UIStroke", NameBox).Color = NeonRed
+Instance.new("UICorner", NameBox).CornerRadius = UDim.new(0, 6)
 NameBox.FocusLost:Connect(function() _G.TargetName = NameBox.Text end)
+
+local function AddSubBtn(n, y, c)
+    local b = Instance.new("TextButton", SubMenu)
+    b.Size = UDim2.new(1, -16, 0, 38)
+    b.Position = UDim2.new(0, 8, 0, y)
+    b.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    b.Text = n..": OFF"
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.SourceSansBold
+    b.TextSize = 13
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIStroke", b).Color = Color3.fromRGB(50,50,50)
+    
+    local s = false
+    b.MouseButton1Click:Connect(function()
+        s = not s
+        b.Text = n..(s and ": ON" or ": OFF")
+        b.TextColor3 = s and NeonRed or Color3.new(1,1,1)
+        c(s)
+    end)
+end
+
+AddSubBtn("LOOP TELEPORT", 75, function(v) _G.LoopTP = v end)
+AddSubBtn("BRING PLAYER", 118, function(v) _G.Bring = v end)
+
+-- TP Nearest Tool Elements
+local TPBtnInMenu = Instance.new("TextButton", TPMenu)
+TPBtnInMenu.Size = UDim2.new(1, -16, 0, 38)
+TPBtnInMenu.Position = UDim2.new(0, 8, 0, 45)
+TPBtnInMenu.BackgroundColor3 = Color3.fromRGB(30,30,30)
+TPBtnInMenu.Text = "TP NEAREST: OFF"
+TPBtnInMenu.TextColor3 = Color3.new(1,1,1)
+TPBtnInMenu.Font = Enum.Font.SourceSansBold
+TPBtnInMenu.TextSize = 13
+Instance.new("UICorner", TPBtnInMenu).CornerRadius = UDim.new(0, 6)
+Instance.new("UIStroke", TPBtnInMenu).Color = Color3.fromRGB(50,50,50)
+local tpState = false
+TPBtnInMenu.MouseButton1Click:Connect(function()
+    tpState = not tpState
+    _G.TPNearest = tpState
+    TPBtnInMenu.Text = "TP NEAREST: " .. (tpState and "ON" or "OFF")
+    TPBtnInMenu.TextColor3 = tpState and NeonRed or Color3.new(1,1,1)
+end)
 
 local function GetPlayerSmart(name)
     if name == "" then return nil end
@@ -150,61 +335,6 @@ local function GetNearestPlayer()
     end
     return nearest
 end
-
-local TPBtnInMenu = Instance.new("TextButton", TPMenu); TPBtnInMenu.Size = UDim2.new(1, -20, 0, 45); TPBtnInMenu.Position = UDim2.new(0, 10, 0, 50); TPBtnInMenu.BackgroundColor3 = Color3.fromRGB(30,30,30); TPBtnInMenu.Text = "TP NEAREST: OFF"; TPBtnInMenu.TextColor3 = Color3.new(1,1,1); TPBtnInMenu.Font = Enum.Font.SourceSansBold; TPBtnInMenu.TextSize = 14
-local tpState = false
-TPBtnInMenu.MouseButton1Click:Connect(function()
-    tpState = not tpState
-    _G.TPNearest = tpState
-    TPBtnInMenu.Text = "TP NEAREST: " .. (tpState and "ON" or "OFF")
-    TPBtnInMenu.TextColor3 = tpState and NeonRed or Color3.new(1,1,1)
-end)
-
-AddSubBtn("LOOP TELEPORT", 105, function(v) _G.LoopTP = v end)
-AddSubBtn("BRING PLAYER", 160, function(v) _G.Bring = v end)
-
-AddMainBtn("SMART AIM", 50, function(v) _G.Aim = v end)
-AddMainBtn("TP NEAREST", 105, function(v) TPMenu.Visible = v end)
-AddMainBtn("FLY MODE", 160, function(v) _G.Fly = v end)
-AddMainBtn("PLAYER ESP", 215, function(v) _G.ESP = v end)
-AddMainBtn("PLAYER TOOL", 270, function(v) SubMenu.Visible = v end)
-
-AddMainBtn("TP TO VOID", 325, function(v) 
-    _G.VoidActive = v 
-    if v and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
-        LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
-        if not CurrentVoidPlate then
-            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
-        end
-        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -501, LP.Character.HumanoidRootPart.Position.Z)
-        LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
-    elseif not v and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
-        LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0)
-    end 
-end)
-
-local Inp = Instance.new("TextBox", Main);
-Inp.Size = UDim2.new(1, -20, 0, 45);
-Inp.Position = UDim2.new(0, 10, 0, 380);
-Inp.BackgroundColor3 = Color3.fromRGB(30,30,30);
-Inp.PlaceholderText = "NHẬP TỐC ĐỘ...";
-Inp.Text = "TỐC ĐỘ (16)";
-Inp.TextColor3 = NeonRed;
-Inp.Font = Enum.Font.SourceSansBold;
-Inp.TextSize = 18;
-Instance.new("UIStroke", Inp).Color = NeonRed
-
-Inp.FocusLost:Connect(function(enterPressed)
-    local val = tonumber(Inp.Text)
-    if val then
-        _G.Speed = val
-        Inp.Text = "TỐC ĐỘ ("..tostring(val)..")"
-    else
-        Inp.Text = "TỐC ĐỘ ("..tostring(_G.Speed)..")"
-    end
-end)
-
-local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-20,0,40); Close.Position = UDim2.new(0,10,0,435); Close.BackgroundColor3 = Color3.new(0.2,0,0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1,1,1); Close.Font = Enum.Font.SourceSansBold
 
 local renderSteppedConnection = nil
 local heartbeatConnection = nil
@@ -251,15 +381,12 @@ ToggleBtn.Draggable = true
 local ToggleStroke = Instance.new("UIStroke", ToggleBtn)
 ToggleStroke.Color = NeonRed
 ToggleStroke.Thickness = 2
-
-local ToggleCorner = Instance.new("UICorner", ToggleBtn)
-ToggleCorner.CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
 
 ToggleBtn.MouseButton1Click:Connect(function()
     Main.Visible = not Main.Visible
 end)
 
--- HÀM TÍNH HƯỚNG DI CHUYỂN CHÍNH XÁC THEO NÚT BẤM VÀ CAMERA
 local function GetDirection()
     local moveVector = Vector3.zero
     if UIS:IsKeyDown(Enum.KeyCode.W) or UIS:IsKeyDown(Enum.KeyCode.Up) then
@@ -293,7 +420,6 @@ local function GetDirection()
     return Vector3.zero
 end
 
--- VÒNG LẶP RENDERSTEPPED DÙNG ĐỂ TỐC ĐỘ DI CHUYỂN VÀ LOOP TP MƯỢT TUYỆT ĐỐI
 renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
     if not _G.Active then return end
     pcall(function()
@@ -302,14 +428,13 @@ renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
         local myHRP = myChar.HumanoidRootPart
         local hum = myChar:FindFirstChildOfClass("Humanoid")
 
-        -- TĂNG TỐC DI CHUYỂN CHÍNH XÁC THEO NÚT BẤM VÀ HƯỚNG XOAY NHÂN VẬT
         if _G.Speed > 16 then
+            if hum then hum.WalkSpeed = 16 end
             local moveDirection = GetDirection()
             if moveDirection.Magnitude > 0 then
                 local moveDelta = moveDirection * (_G.Speed - 16) * deltaTime
                 myHRP.CFrame = myHRP.CFrame + moveDelta
                 
-                -- Quay mặt nhân vật theo đúng hướng di chuyển để dễ canh trúng địch
                 if not _G.Aim and not _G.TPNearest and not _G.LoopTP then
                     local targetRotation = CFrame.lookAt(myHRP.Position, myHRP.Position + moveDirection)
                     myHRP.CFrame = CFrame.new(myHRP.Position) * targetRotation.Rotation
@@ -317,7 +442,6 @@ renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
             end
         end
 
-        -- 1. LOOP TP TỚI NGƯỜI CHƠI GẦN NHẤT
         if _G.TPNearest then
             local t = GetNearestPlayer()
             if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
@@ -326,7 +450,6 @@ renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
             end
         end
 
-        -- 2. LOOP TP TỚI NGƯỜI CHƠI THEO TÊN
         if _G.LoopTP then
             local t = GetPlayerSmart(_G.TargetName)
             if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
@@ -335,7 +458,6 @@ renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
             end
         end
 
-        -- 3. BRING PLAYER (KÉO NGƯỜI CHƠI)
         if _G.Bring then
             local t = GetPlayerSmart(_G.TargetName)
             if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
@@ -389,7 +511,7 @@ heartbeatConnection = RS.Heartbeat:Connect(function()
 end)
 
 task.spawn(function()
-    StartIntro();
-    Main.Visible = true;
-    ToggleBtn.Visible = true;
+    StartIntro()
+    Main.Visible = true
+    ToggleBtn.Visible = true
 end)
