@@ -7,22 +7,23 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Camera = Workspace.CurrentCamera
 
-local TARGET_Y = 85
-local FLY_Y = 85
 local TARGET_ANIMATION_ID = "rbxassetid://180435571"
 
-local SAFE_ZONE_WALK_SPEED = 2500
-local OTHER_ZONE_WALK_SPEED = 2500
+local TELEPORT_LOOP_DURATION = 0.7
+local ATTRACT_SPEED = 2500
 
-local FINAL_SAFE_ZONE = Vector3.new(549.39, TARGET_Y, -365.5)
-local SAFE_ESCAPE_POS = Vector3.new(547.54, TARGET_Y, -364.99)
+local SUPPORT_GROUND_Y = 70.00
+local SUPPORT_FEET_OFFSET = 3.00
+
+local FINAL_SAFE_ZONE = Vector3.new(549.39, 85, -365.5)
+local SAFE_ESCAPE_POS = Vector3.new(547.54, 85, -364.99)
 
 local SAFE_MIN_X = 365.2
 local SAFE_MAX_X = 552
 local SAFE_MIN_Z = -582
 local SAFE_MAX_Z = -146
 
-local AUTO_STEAL_SAFE_POS = Vector3.new(549.39, TARGET_Y, -365.5)
+local AUTO_STEAL_SAFE_POS = Vector3.new(549.39, 85, -365.5)
 local AUTO_STEAL_RETURN_DELAY = 0.5
 
 local SAFE_MODE_Y_MIN = 110
@@ -32,16 +33,16 @@ local SAFE_MODE_SPEED = 1
 local SAFE_ZONE_DATA = {Name = "Safe Zone", Position = FINAL_SAFE_ZONE, IsSafeZone = true}
 
 local OTHER_ZONES = {
-    {Name = "Jungle",           Position = Vector3.new(1188.33, TARGET_Y, -411.97)},
-    {Name = "Snow",             Position = Vector3.new(1491.05, TARGET_Y, -311.35)},
-    {Name = "Volcano",          Position = Vector3.new(1878.24, TARGET_Y, -402.08)},
-    {Name = "Abyss Ocean",      Position = Vector3.new(2281.41, TARGET_Y, -322.72)},
-    {Name = "Prehistoric",      Position = Vector3.new(2812.95, TARGET_Y, -402.2)},
-    {Name = "Cosmic",           Position = Vector3.new(3392.38, TARGET_Y, -320.73)},
-    {Name = "Cherry Blossom",   Position = Vector3.new(4028.07, TARGET_Y, -400.72)},
-    {Name = "Titan Temple",     Position = Vector3.new(4797.41, TARGET_Y, -324.84)},
-    {Name = "Angels/Demons",    Position = Vector3.new(5661.74, TARGET_Y, -324.21)},
-    {Name = "Enchanted Forest", Position = Vector3.new(6697.23, TARGET_Y, -348.52)},
+    {Name = "Jungle",           Position = Vector3.new(1188.33, 85, -411.97)},
+    {Name = "Snow",             Position = Vector3.new(1491.05, 85, -311.35)},
+    {Name = "Volcano",          Position = Vector3.new(1878.24, 85, -402.08)},
+    {Name = "Abyss Ocean",      Position = Vector3.new(2281.41, 85, -322.72)},
+    {Name = "Prehistoric",      Position = Vector3.new(2812.95, 85, -402.2)},
+    {Name = "Cosmic",           Position = Vector3.new(3392.38, 85, -320.73)},
+    {Name = "Cherry Blossom",   Position = Vector3.new(4028.07, 85, -400.72)},
+    {Name = "Titan Temple",     Position = Vector3.new(4797.41, 85, -324.84)},
+    {Name = "Angels/Demons",    Position = Vector3.new(5661.74, 85, -324.21)},
+    {Name = "Enchanted Forest", Position = Vector3.new(6697.23, 85, -348.52)},
 }
 
 local currentHoldingEgg = nil
@@ -51,9 +52,6 @@ local originalText = ""
 
 local currentAnimTrack = nil
 local HumanoidProxy = nil
-
-local EGG_OFFSET = CFrame.new(0, -1, -2)
-local ANTI_TP_FORCE = true
 
 local autoStealActive = false
 local autoStealBusy = false
@@ -90,51 +88,14 @@ RunService.Stepped:Connect(function()
     if char then enforceSafeAttributes(char) end
 end)
 
-local function clearServerConstraints(eggPart)
-    if not eggPart then return end
-    for _, c in ipairs(eggPart:GetChildren()) do
-        if c:IsA("WeldConstraint")
-            or c:IsA("Weld")
-            or c:IsA("BodyPosition")
-            or c:IsA("BodyGyro")
-            or c:IsA("BodyVelocity")
-            or c:IsA("AlignPosition")
-            or c:IsA("AlignOrientation")
-            or c:IsA("ManualWeld")
-            or c:IsA("Motor6D") then
-            if c.Name ~= "EggWeld" then
-                pcall(function() c:Destroy() end)
-            end
-        end
-    end
-end
-
 local function setupProximityPrompt(prompt)
     if not prompt:IsA("ProximityPrompt") then return end
     prompt.HoldDuration = 0
     prompt.Triggered:Connect(function(player)
         if player == LocalPlayer then
-            local character = player.Character
             local eggPart = prompt.Parent
-
-            if character and character:FindFirstChild("HumanoidRootPart") and eggPart and eggPart:IsA("BasePart") then
+            if eggPart and eggPart:IsA("BasePart") then
                 currentHoldingEgg = eggPart
-
-                local oldWeld = eggPart:FindFirstChild("EggWeld")
-                if oldWeld then oldWeld:Destroy() end
-
-                clearServerConstraints(eggPart)
-
-                eggPart.CanCollide = false
-                eggPart.Massless = true
-
-                eggPart.CFrame = character.HumanoidRootPart.CFrame * EGG_OFFSET
-
-                local weld = Instance.new("WeldConstraint")
-                weld.Name = "EggWeld"
-                weld.Part0 = character.HumanoidRootPart
-                weld.Part1 = eggPart
-                weld.Parent = eggPart
             end
         end
     end)
@@ -142,39 +103,6 @@ end
 
 for _, obj in ipairs(Workspace:GetDescendants()) do setupProximityPrompt(obj) end
 Workspace.DescendantAdded:Connect(setupProximityPrompt)
-
-RunService.RenderStepped:Connect(function()
-    if not ANTI_TP_FORCE then return end
-    if not currentHoldingEgg or type(currentHoldingEgg) ~= "userdata" or not currentHoldingEgg.Parent then return end
-
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    currentHoldingEgg.AssemblyLinearVelocity = Vector3.zero
-    currentHoldingEgg.AssemblyAngularVelocity = Vector3.zero
-
-    local weld = currentHoldingEgg:FindFirstChild("EggWeld")
-    if not weld or weld.Part0 ~= hrp or weld.Part1 ~= currentHoldingEgg then
-        if weld then weld:Destroy() end
-        clearServerConstraints(currentHoldingEgg)
-
-        currentHoldingEgg.CFrame = hrp.CFrame * EGG_OFFSET
-
-        local newWeld = Instance.new("WeldConstraint")
-        newWeld.Name = "EggWeld"
-        newWeld.Part0 = hrp
-        newWeld.Part1 = currentHoldingEgg
-        newWeld.Parent = currentHoldingEgg
-    end
-
-    for _, c in ipairs(currentHoldingEgg:GetChildren()) do
-        if c.Name ~= "EggWeld" and (c:IsA("BodyPosition") or c:IsA("AlignPosition") or c:IsA("BodyVelocity") or c:IsA("Weld") or c:IsA("Motor6D")) then
-            pcall(function() c:Destroy() end)
-        end
-    end
-end)
 
 local oldGui = PlayerGui:FindFirstChild("UnifiedScriptGui")
 if oldGui then oldGui:Destroy() end
@@ -245,91 +173,152 @@ local function stopTravel()
     end
 end
 
-local function walkToTarget(destinationPos, speed)
-    local char, hrp, hum = getCharacter()
-    if not char or not hrp or not hum then return end
+local function createSupportPart()
+    local part = Instance.new("Part")
+    part.Name = "GroundSupport"
+    part.Anchored = true
+    part.CanCollide = false
+    part.CanQuery = false
+    part.CanTouch = false
+    part.Transparency = 1
+    part.Material = Enum.Material.SmoothPlastic
+    part.Size = Vector3.new(20, 12, 20)
+    part.Parent = Workspace
+    return part
+end
 
-    local walkHum = HumanoidProxy or hum
-    if not walkHum then return end
+local function updateSupportPart(part, hrp)
+    if not part or not part.Parent then return end
+    if not hrp or not hrp.Parent then return end
 
-    speed = speed or OTHER_ZONE_WALK_SPEED
+    local topY = hrp.Position.Y - SUPPORT_FEET_OFFSET
+    local bottomY = SUPPORT_GROUND_Y
+    local height = math.max(topY - bottomY, 1)
+    local centerY = (topY + bottomY) / 2
 
-    local targetFlat = Vector3.new(destinationPos.X, TARGET_Y, destinationPos.Z)
+    part.Size = Vector3.new(20, height, 20)
+    part.CFrame = CFrame.new(hrp.Position.X, centerY, hrp.Position.Z)
+end
 
-    hrp.AssemblyLinearVelocity = Vector3.zero
-    hrp.AssemblyAngularVelocity = Vector3.zero
-    hrp.CFrame = CFrame.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
+local function loopTeleportTo(targetPos, duration)
+    local char, hrp = getCharacter()
+    if not char or not hrp then return end
 
-    local platform = Instance.new("Part")
-    platform.Name = "WalkPlatform"
-    platform.Size = Vector3.new(20, 4, 20)
-    platform.Anchored = true
-    platform.CanCollide = true
-    platform.CanQuery = false
-    platform.CanTouch = false
-    platform.Transparency = 1
-    platform.Material = Enum.Material.SmoothPlastic
-    platform.CFrame = CFrame.new(hrp.Position.X, TARGET_Y - 5, hrp.Position.Z)
-    platform.Parent = Workspace
+    duration = duration or TELEPORT_LOOP_DURATION
 
-    local loopConn = RunService.RenderStepped:Connect(function(dt)
+    local anchor = Instance.new("Part")
+    anchor.Name = "TPAnchor"
+    anchor.Size = Vector3.new(2, 2, 2)
+    anchor.Anchored = true
+    anchor.CanCollide = false
+    anchor.CanQuery = false
+    anchor.CanTouch = false
+    anchor.Transparency = 1
+    anchor.Material = Enum.Material.SmoothPlastic
+    anchor.CFrame = CFrame.new(targetPos)
+    anchor.Parent = Workspace
+
+    local support = createSupportPart()
+
+    local startTime = tick()
+    local conn = RunService.RenderStepped:Connect(function()
+        if not isTraveling then return end
         if not hrp or not hrp.Parent then return end
-        if not platform or not platform.Parent then return end
-
-        platform.CFrame = CFrame.new(hrp.Position.X, TARGET_Y - 5, hrp.Position.Z)
-
-        local currentPos = hrp.Position
-        local deltaX = targetFlat.X - currentPos.X
-        local deltaZ = targetFlat.Z - currentPos.Z
-        local distToTarget = math.sqrt(deltaX * deltaX + deltaZ * deltaZ)
-
-        if distToTarget > 0.1 then
-            local dirX = deltaX / distToTarget
-            local dirZ = deltaZ / distToTarget
-            local stepDist = math.min(speed * dt, distToTarget)
-            local newX = currentPos.X + dirX * stepDist
-            local newZ = currentPos.Z + dirZ * stepDist
-
-            local rot = hrp.CFrame - hrp.CFrame.Position
-            hrp.CFrame = CFrame.new(newX, TARGET_Y, newZ) * rot
-        end
+        if not anchor or not anchor.Parent then return end
+        if tick() - startTime > duration then return end
 
         hrp.AssemblyLinearVelocity = Vector3.zero
         hrp.AssemblyAngularVelocity = Vector3.zero
+        hrp.CFrame = anchor.CFrame
+
+        updateSupportPart(support, hrp)
+    end)
+
+    local endTime = tick() + duration
+    while isTraveling and tick() < endTime do
+        RunService.Heartbeat:Wait()
+    end
+
+    if conn then conn:Disconnect() end
+    if anchor then anchor:Destroy() end
+    if support then support:Destroy() end
+
+    if hrp and hrp.Parent then
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+    end
+end
+
+local function attractToPos(targetPos)
+    local char, hrp, hum = getCharacter()
+    if not char or not hrp then return end
+
+    local anchor = Instance.new("Part")
+    anchor.Name = "AttractAnchor"
+    anchor.Size = Vector3.new(6, 6, 6)
+    anchor.Anchored = true
+    anchor.CanCollide = false
+    anchor.CanQuery = false
+    anchor.CanTouch = false
+    anchor.Transparency = 1
+    anchor.Material = Enum.Material.SmoothPlastic
+    anchor.CFrame = CFrame.new(targetPos)
+    anchor.Parent = Workspace
+
+    local support = createSupportPart()
+
+    local savedWS = nil
+    local wsConn = nil
+    if hum then
+        savedWS = hum.WalkSpeed
+        hum.WalkSpeed = 0
+        wsConn = hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            if hum.WalkSpeed ~= 0 then
+                hum.WalkSpeed = 0
+            end
+        end)
+    end
+
+    local reached = false
+
+    local conn = RunService.RenderStepped:Connect(function(dt)
+        if not isTraveling or reached then return end
+        if not hrp or not hrp.Parent then return end
+        if not anchor or not anchor.Parent then return end
+
+        local cur = hrp.Position
+        local diff = targetPos - cur
+        local dist = diff.Magnitude
+
+        if dist <= 3 then
+            reached = true
+            return
+        end
+
+        local dir = diff.Unit
+        local stepDist = math.min(ATTRACT_SPEED * dt, dist)
+        hrp.CFrame = CFrame.new(cur + dir * stepDist) * (hrp.CFrame - hrp.CFrame.Position)
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+
+        updateSupportPart(support, hrp)
     end)
 
     local startTime = tick()
-
-    while isTraveling and char and hrp and walkHum.Health > 0 do
-        if currentAnimTrack then
-            currentAnimTrack:Stop(0)
-            currentAnimTrack = nil
-        end
-
-        local currentPos = Vector3.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
-        local dist = (targetFlat - currentPos).Magnitude
-        if dist <= 3 then break end
-        if tick() - startTime > 90 then break end
-
+    while isTraveling and not reached and tick() - startTime < 5 do
         RunService.Heartbeat:Wait()
     end
 
-    local stopEnd = tick() + 0.2
-    while tick() < stopEnd do
-        if hrp and hrp.Parent then
-            hrp.AssemblyLinearVelocity = Vector3.zero
-            hrp.AssemblyAngularVelocity = Vector3.zero
-            local rot = hrp.CFrame - hrp.CFrame.Position
-            hrp.CFrame = CFrame.new(hrp.Position.X, TARGET_Y, hrp.Position.Z) * rot
-        end
-        RunService.Heartbeat:Wait()
+    if conn then conn:Disconnect() end
+    if wsConn then wsConn:Disconnect() end
+    if hum and hum.Parent and savedWS then
+        hum.WalkSpeed = savedWS
     end
-
-    loopConn:Disconnect()
-    if platform then platform:Destroy() end
+    if anchor then anchor:Destroy() end
+    if support then support:Destroy() end
 end
 
-local function moveToTarget(targetPosition, clickedButton, zoneName, speed)
+local function moveToTarget(targetPosition, clickedButton, zoneName)
     if isTraveling then
         stopTravel()
         return
@@ -346,20 +335,16 @@ local function moveToTarget(targetPosition, clickedButton, zoneName, speed)
     clickedButton.Text = "STOP"
 
     task.spawn(function()
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
-        hrp.CFrame = CFrame.new(hrp.Position.X, TARGET_Y, hrp.Position.Z)
-
         local currentPos = hrp.Position
         local isInSafeZone = (currentPos.X >= SAFE_MIN_X and currentPos.X <= SAFE_MAX_X) and
                              (currentPos.Z >= SAFE_MIN_Z and currentPos.Z <= SAFE_MAX_Z)
 
         if isInSafeZone then
-            walkToTarget(SAFE_ESCAPE_POS, speed)
+            attractToPos(SAFE_ESCAPE_POS)
         end
 
         if isTraveling then
-            walkToTarget(targetPosition, speed)
+            loopTeleportTo(targetPosition, TELEPORT_LOOP_DURATION)
         end
 
         stopTravel()
@@ -368,8 +353,6 @@ end
 
 local function sendEggToSafeZone()
     if currentHoldingEgg and type(currentHoldingEgg) == "userdata" and currentHoldingEgg.Parent then
-        local weld = currentHoldingEgg:FindFirstChild("EggWeld")
-        if weld then weld:Destroy() end
         currentHoldingEgg.CFrame = CFrame.new(FINAL_SAFE_ZONE)
         currentHoldingEgg = nil
     end
@@ -514,7 +497,7 @@ SafeZoneBtn.MouseButton1Click:Connect(function()
     if currentHoldingEgg and type(currentHoldingEgg) == "userdata" and currentHoldingEgg.Parent then
         sendEggToSafeZone()
     else
-        moveToTarget(SAFE_ZONE_DATA.Position, SafeZoneBtn, SAFE_ZONE_DATA.Name, SAFE_ZONE_WALK_SPEED)
+        moveToTarget(SAFE_ZONE_DATA.Position, SafeZoneBtn, SAFE_ZONE_DATA.Name)
     end
 end)
 
@@ -702,7 +685,7 @@ for _, zone in ipairs(OTHER_ZONES) do
     bStroke.Thickness = 1.5
 
     btn.MouseButton1Click:Connect(function()
-        moveToTarget(zone.Position, btn, zone.Name, OTHER_ZONE_WALK_SPEED)
+        moveToTarget(zone.Position, btn, zone.Name)
     end)
 end
 
