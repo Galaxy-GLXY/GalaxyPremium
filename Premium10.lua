@@ -8,17 +8,28 @@ local UIS = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 local HttpService = game:GetService("HttpService")
 
+for _, v in pairs(LP.PlayerGui:GetChildren()) do
+    if v.Name:find("Galaxy") then v:Destroy() end
+end
+
 local ConfigFileName = "GALAXY_PREMIUM_CONFIG.json"
 local Config = {
     MainPos = {0.5, -200, 0.3, 0},
-    TogglePos = {0, 110, 0, 15},
+    SubMenuPos = {0.5, 205, 0.3, 0},
     TPMenuPos = {0.5, 205, 0.52, 0},
     VoidMenuPos = {0.5, 205, 0.74, 0},
-    SubMenuPos = {0.5, 205, 0.3, 0},
     Speed = 16,
-    TPNearestOpen = false,
-    VoidMenuOpen = false,
-    SubMenuOpen = false
+    Aim = false,
+    Fly = false,
+    ESP = false,
+    TPNearest = false,
+    PlayerTool = false,
+    VoidActive = false,
+    LoopTP = false,
+    Bring = false,
+    VoidPanelOpen = false,
+    PlayerPanelOpen = false,
+    NearestPanelOpen = false
 }
 
 local function SaveConfig()
@@ -70,21 +81,24 @@ local function ApplyFFlags()
     workspace.DescendantAdded:Connect(Optimize)
 end
 
-for _, v in pairs(LP.PlayerGui:GetChildren()) do
-    if v.Name:find("Galaxy") then v:Destroy() end
-end
-
 local G = Instance.new("ScreenGui")
 G.Name = "Galaxy_"..math.random(1000,9999)
 G.ResetOnSpawn = false
 G.Parent = LP:WaitForChild("PlayerGui")
 
 local NeonRed = Color3.fromRGB(255, 0, 0)
-local NeonGreen = Color3.fromRGB(0, 170, 60)
 
 _G.Active = true
-_G.TargetName = ""; _G.Speed = Config.Speed; _G.Fly = false; _G.TPNearest = false; _G.Aim = false; _G.ESP = false
-_G.LoopTP = false; _G.Bring = false; _G.VoidActive = false
+_G.TargetName = "" 
+_G.Speed = Config.Speed 
+_G.Fly = false 
+_G.TPNearest = false 
+_G.Aim = false 
+_G.ESP = false
+_G.LoopTP = false 
+_G.Bring = false 
+_G.VoidActive = false
+
 local LastPosBeforeVoid = nil
 local CurrentVoidPlate = nil
 
@@ -113,6 +127,8 @@ local charAddedConnection = LP.CharacterAdded:Connect(function()
     GiveNoclip()
 end)
 
+local introFinished = false
+
 local function StartIntro()
     local Overlay = Instance.new("Frame", G); Overlay.Size = UDim2.new(1, 0, 1, 0); Overlay.BackgroundColor3 = Color3.new(0, 0, 0); Overlay.BackgroundTransparency = 1; Overlay.ZIndex = 100
     local IntroBox = Instance.new("Frame", Overlay); IntroBox.Size = UDim2.new(0, 400, 0, 100); IntroBox.Position = UDim2.new(0.5, -200, 0.5, -50); IntroBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10); IntroBox.BackgroundTransparency = 1
@@ -131,6 +147,7 @@ local function StartIntro()
     task.wait(0.6); Overlay:Destroy()
     ApplyFFlags()
     GiveNoclip()
+    introFinished = true
 end
 
 local Main = Instance.new("Frame", G)
@@ -159,7 +176,7 @@ task.spawn(function()
 end)
 
 local SubMenu = Instance.new("Frame", G)
-SubMenu.Visible = Config.SubMenuOpen
+SubMenu.Visible = Config.PlayerPanelOpen
 SubMenu.Size = UDim2.new(0, 200, 0, 185)
 SubMenu.Position = UDim2.new(Config.SubMenuPos[1], Config.SubMenuPos[2], Config.SubMenuPos[3], Config.SubMenuPos[4])
 SubMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
@@ -184,7 +201,7 @@ task.spawn(function()
 end)
 
 local TPMenu = Instance.new("Frame", G)
-TPMenu.Visible = Config.TPNearestOpen
+TPMenu.Visible = Config.NearestPanelOpen
 TPMenu.Size = UDim2.new(0, 200, 0, 100)
 TPMenu.Position = UDim2.new(Config.TPMenuPos[1], Config.TPMenuPos[2], Config.TPMenuPos[3], Config.TPMenuPos[4])
 TPMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
@@ -199,7 +216,7 @@ TPMenu:GetPropertyChangedSignal("Position"):Connect(function()
 end)
 
 local VoidMenu = Instance.new("Frame", G)
-VoidMenu.Visible = Config.VoidMenuOpen
+VoidMenu.Visible = Config.VoidPanelOpen
 VoidMenu.Size = UDim2.new(0, 200, 0, 100)
 VoidMenu.Position = UDim2.new(Config.VoidMenuPos[1], Config.VoidMenuPos[2], Config.VoidMenuPos[3], Config.VoidMenuPos[4])
 VoidMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
@@ -239,7 +256,7 @@ Inp.Size = UDim2.new(1, 0, 0, 38)
 Inp.Position = UDim2.new(0, 0, 0, 8)
 Inp.BackgroundColor3 = Color3.fromRGB(30,30,30)
 Inp.PlaceholderText = "TỐC ĐỘ..."
-Inp.Text = "TỐC ĐỘ ("..tostring(_G.Speed)..")"
+Inp.Text = "TỐC ĐỘ ("..tostring(Config.Speed)..")"
 Inp.TextColor3 = NeonRed
 Inp.Font = Enum.Font.SourceSansBold
 Inp.TextSize = 13
@@ -263,19 +280,19 @@ RightContainer.Size = UDim2.new(0, 260, 1, -72)
 RightContainer.Position = UDim2.new(0, 130, 0, 38)
 RightContainer.BackgroundTransparency = 1
 
-local function AddMainBtn(n, y, c)
+local function AddMainBtn(n, y, initialState, c)
     local b = Instance.new("TextButton", RightContainer)
     b.Size = UDim2.new(1, 0, 0, 31)
     b.Position = UDim2.new(0, 0, 0, y)
     b.BackgroundColor3 = Color3.fromRGB(30,30,30)
-    b.Text = n..": OFF"
-    b.TextColor3 = Color3.new(1,1,1)
+    b.Text = n..(initialState and ": ON" or ": OFF")
+    b.TextColor3 = initialState and NeonRed or Color3.new(1,1,1)
     b.Font = Enum.Font.SourceSansBold
     b.TextSize = 13
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
     Instance.new("UIStroke", b).Color = Color3.fromRGB(50,50,50)
     
-    local s = false
+    local s = initialState
     b.MouseButton1Click:Connect(function()
         s = not s
         b.Text = n..(s and ": ON" or ": OFF")
@@ -285,50 +302,24 @@ local function AddMainBtn(n, y, c)
     return b
 end
 
-AddMainBtn("SMART AIM", 0, function(v) _G.Aim = v end)
-AddMainBtn("FLY MODE", 35, function(v) _G.Fly = v end)
-AddMainBtn("PLAYER ESP", 70, function(v) _G.ESP = v end)
-
-local btnNearest = AddMainBtn("PLAYER NEAREST", 105, function(v) 
+AddMainBtn("SMART AIM", 0, Config.Aim, function(v) _G.Aim = v Config.Aim = v SaveConfig() end)
+AddMainBtn("FLY MODE", 35, Config.Fly, function(v) _G.Fly = v Config.Fly = v SaveConfig() end)
+AddMainBtn("PLAYER ESP", 70, Config.ESP, function(v) _G.ESP = v Config.ESP = v SaveConfig() end)
+AddMainBtn("PLAYER NEAREST", 105, Config.NearestPanelOpen, function(v) 
     TPMenu.Visible = v 
-    Config.TPNearestOpen = v
-    SaveConfig()
+    Config.NearestPanelOpen = v 
+    SaveConfig() 
 end)
-if Config.TPNearestOpen then
-    btnNearest.Text = "PLAYER NEAREST: ON"
-    btnNearest.TextColor3 = NeonRed
-end
-
-local btnTool = AddMainBtn("PLAYER TOOL", 140, function(v) 
+AddMainBtn("PLAYER TOOL", 140, Config.PlayerPanelOpen, function(v) 
     SubMenu.Visible = v 
-    Config.SubMenuOpen = v
-    SaveConfig()
+    Config.PlayerPanelOpen = v 
+    SaveConfig() 
 end)
-if Config.SubMenuOpen then
-    btnTool.Text = "PLAYER TOOL: ON"
-    btnTool.TextColor3 = NeonRed
-end
-
-local btnVoid = AddMainBtn("TP TO VOID", 175, function(v) 
-    VoidMenu.Visible = v
-    Config.VoidMenuOpen = v
-    SaveConfig()
-    _G.VoidActive = v 
-    if v and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
-        LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
-        if not CurrentVoidPlate then
-            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
-        end
-        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -501, LP.Character.HumanoidRootPart.Position.Z)
-        LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
-    elseif not v and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
-        LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0)
-    end 
+AddMainBtn("TP TO VOID", 175, Config.VoidPanelOpen, function(v) 
+    VoidMenu.Visible = v 
+    Config.VoidPanelOpen = v 
+    SaveConfig() 
 end)
-if Config.VoidMenuOpen then
-    btnVoid.Text = "TP TO VOID: ON"
-    btnVoid.TextColor3 = NeonRed
-end
 
 local Close = Instance.new("TextButton", Main)
 Close.Size = UDim2.new(1, -16, 0, 28)
@@ -353,19 +344,19 @@ Instance.new("UIStroke", NameBox).Color = NeonRed
 Instance.new("UICorner", NameBox).CornerRadius = UDim.new(0, 6)
 NameBox.FocusLost:Connect(function() _G.TargetName = NameBox.Text end)
 
-local function AddSubBtn(n, y, c)
+local function AddSubBtn(n, y, initialState, c)
     local b = Instance.new("TextButton", SubMenu)
     b.Size = UDim2.new(1, -16, 0, 38)
     b.Position = UDim2.new(0, 8, 0, y)
     b.BackgroundColor3 = Color3.fromRGB(30,30,30)
-    b.Text = n..": OFF"
-    b.TextColor3 = Color3.new(1,1,1)
+    b.Text = n..(initialState and ": ON" or ": OFF")
+    b.TextColor3 = initialState and NeonRed or Color3.new(1,1,1)
     b.Font = Enum.Font.SourceSansBold
     b.TextSize = 13
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
     Instance.new("UIStroke", b).Color = Color3.fromRGB(50,50,50)
     
-    local s = false
+    local s = initialState
     b.MouseButton1Click:Connect(function()
         s = not s
         b.Text = n..(s and ": ON" or ": OFF")
@@ -374,56 +365,56 @@ local function AddSubBtn(n, y, c)
     end)
 end
 
-AddSubBtn("LOOP TELEPORT", 75, function(v) _G.LoopTP = v end)
-AddSubBtn("BRING PLAYER", 118, function(v) _G.Bring = v end)
+AddSubBtn("LOOP TELEPORT", 75, Config.LoopTP, function(v) _G.LoopTP = v Config.LoopTP = v SaveConfig() end)
+AddSubBtn("BRING PLAYER", 118, Config.Bring, function(v) _G.Bring = v Config.Bring = v SaveConfig() end)
 
 local TPBtnInMenu = Instance.new("TextButton", TPMenu)
 TPBtnInMenu.Size = UDim2.new(1, -16, 0, 38)
 TPBtnInMenu.Position = UDim2.new(0, 8, 0, 45)
 TPBtnInMenu.BackgroundColor3 = Color3.fromRGB(30,30,30)
-TPBtnInMenu.Text = "TP NEAREST: OFF"
-TPBtnInMenu.TextColor3 = Color3.new(1,1,1)
+TPBtnInMenu.Text = "TP NEAREST: "..(Config.TPNearest and "ON" or "OFF")
+TPBtnInMenu.TextColor3 = Config.TPNearest and NeonRed or Color3.new(1,1,1)
 TPBtnInMenu.Font = Enum.Font.SourceSansBold
 TPBtnInMenu.TextSize = 13
 Instance.new("UICorner", TPBtnInMenu).CornerRadius = UDim.new(0, 6)
 Instance.new("UIStroke", TPBtnInMenu).Color = Color3.fromRGB(50,50,50)
-local tpState = false
+
 TPBtnInMenu.MouseButton1Click:Connect(function()
-    tpState = not tpState
-    _G.TPNearest = tpState
-    TPBtnInMenu.Text = "TP NEAREST: " .. (tpState and "ON" or "OFF")
-    TPBtnInMenu.TextColor3 = tpState and NeonRed or Color3.new(1,1,1)
+    Config.TPNearest = not Config.TPNearest
+    _G.TPNearest = Config.TPNearest
+    SaveConfig()
+    TPBtnInMenu.Text = "TP NEAREST: " .. (Config.TPNearest and "ON" or "OFF")
+    TPBtnInMenu.TextColor3 = Config.TPNearest and NeonRed or Color3.new(1,1,1)
 end)
 
 local VoidBtnInMenu = Instance.new("TextButton", VoidMenu)
 VoidBtnInMenu.Size = UDim2.new(1, -16, 0, 38)
 VoidBtnInMenu.Position = UDim2.new(0, 8, 0, 45)
 VoidBtnInMenu.BackgroundColor3 = Color3.fromRGB(30,30,30)
-VoidBtnInMenu.Text = "TP VOID: OFF"
-VoidBtnInMenu.TextColor3 = NeonRed
+VoidBtnInMenu.Text = "TP TO VOID: "..(Config.VoidActive and "ON" or "OFF")
+VoidBtnInMenu.TextColor3 = Config.VoidActive and NeonRed or Color3.new(1,1,1)
 VoidBtnInMenu.Font = Enum.Font.SourceSansBold
 VoidBtnInMenu.TextSize = 13
 Instance.new("UICorner", VoidBtnInMenu).CornerRadius = UDim.new(0, 6)
 Instance.new("UIStroke", VoidBtnInMenu).Color = Color3.fromRGB(50,50,50)
 
 VoidBtnInMenu.MouseButton1Click:Connect(function()
-    _G.VoidActive = not _G.VoidActive
-    if _G.VoidActive and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
+    Config.VoidActive = not Config.VoidActive
+    _G.VoidActive = Config.VoidActive
+    SaveConfig()
+    VoidBtnInMenu.Text = "TP TO VOID: " .. (Config.VoidActive and "ON" or "OFF")
+    VoidBtnInMenu.TextColor3 = Config.VoidActive and NeonRed or Color3.new(1,1,1)
+    
+    if Config.VoidActive and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
         LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
         if not CurrentVoidPlate then
-            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048); CurrentVoidPlate.Anchored = false; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
+            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
         end
         CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -501, LP.Character.HumanoidRootPart.Position.Z)
         LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
-        VoidBtnInMenu.Text = "TP VOID: OFF"
-        VoidBtnInMenu.TextColor3 = NeonRed
-    else 
-        if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
-            LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0)
-        end
-        VoidBtnInMenu.Text = "TP VOID: ON"
-        VoidBtnInMenu.TextColor3 = Color3.new(1,1,1)
-    end 
+    elseif not Config.VoidActive and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
+        LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0)
+    end
 end)
 
 local function GetPlayerSmart(name)
@@ -470,6 +461,15 @@ Close.MouseButton1Click:Connect(function()
     _G.Fly = false
     _G.Speed = 16
 
+    Config.TPNearest = false
+    Config.LoopTP = false
+    Config.Bring = false
+    Config.ESP = false
+    Config.Aim = false
+    Config.Fly = false
+    Config.VoidActive = false
+    SaveConfig()
+
     if renderSteppedConnection then renderSteppedConnection:Disconnect() end
     if heartbeatConnection then heartbeatConnection:Disconnect() end
     if steppedConnection then steppedConnection:Disconnect() end
@@ -490,7 +490,7 @@ end)
 local ToggleBtn = Instance.new("TextButton", G)
 ToggleBtn.Visible = false
 ToggleBtn.Size = UDim2.new(0, 45, 0, 45)
-ToggleBtn.Position = UDim2.new(Config.TogglePos[1], Config.TogglePos[2], Config.TogglePos[3], Config.TogglePos[4])
+ToggleBtn.Position = UDim2.new(0, 110, 0, 15)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 ToggleBtn.Text = "G"
 ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
@@ -498,11 +498,6 @@ ToggleBtn.Font = Enum.Font.SourceSansBold
 ToggleBtn.TextSize = 24
 ToggleBtn.Active = true
 ToggleBtn.Draggable = true
-
-ToggleBtn:GetPropertyChangedSignal("Position"):Connect(function()
-    Config.TogglePos = {ToggleBtn.Position.X.Scale, ToggleBtn.Position.X.Offset, ToggleBtn.Position.Y.Scale, ToggleBtn.Position.Y.Offset}
-    SaveConfig()
-end)
 
 local ToggleStroke = Instance.new("UIStroke", ToggleBtn)
 ToggleStroke.Color = NeonRed
@@ -547,7 +542,7 @@ local function GetDirection()
 end
 
 renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
-    if not _G.Active then return end
+    if not _G.Active or not introFinished then return end
     pcall(function()
         local myChar = LP.Character
         if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
@@ -589,7 +584,7 @@ renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
 end)
 
 heartbeatConnection = RS.Heartbeat:Connect(function()
-    if not _G.Active then return end
+    if not _G.Active or not introFinished then return end
     pcall(function()
         if _G.Fly and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
             LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) 
@@ -635,4 +630,22 @@ task.spawn(function()
     StartIntro()
     Main.Visible = true
     ToggleBtn.Visible = true
+
+    -- Áp dụng trạng thái Config đã lưu sau khi Intro kết thúc
+    _G.Aim = Config.Aim
+    _G.Fly = Config.Fly
+    _G.ESP = Config.ESP
+    _G.TPNearest = Config.TPNearest
+    _G.LoopTP = Config.LoopTP
+    _G.Bring = Config.Bring
+    _G.VoidActive = Config.VoidActive
+
+    if Config.VoidActive and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
+        LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
+        if not CurrentVoidPlate then
+            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
+        end
+        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -501, LP.Character.HumanoidRootPart.Position.Z)
+        LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
+    end
 end)
