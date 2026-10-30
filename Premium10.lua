@@ -60,7 +60,6 @@ local function ApplyFFlags()
         settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
     end)
     Lighting.GlobalShadows = false
-    Lighting.Brightness = 0.5
     Lighting.OutdoorAmbient = Color3.fromRGB(100, 100, 100)
     Lighting.ExposureCompensation = -0.5
     Lighting.FogEnd = 9e9
