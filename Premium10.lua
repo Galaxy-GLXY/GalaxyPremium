@@ -1,3 +1,4 @@
+
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 local RS = game:GetService("RunService")
@@ -407,7 +408,14 @@ VoidBtnInMenu.MouseButton1Click:Connect(function()
     if Config.VoidActive and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
         LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
         if not CurrentVoidPlate then
-            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
+            -- Tấm sàn kính mờ màu trắng sang trọng, kích thước siêu lớn (2048x1x2048) để đỡ nhân vật
+            CurrentVoidPlate = Instance.new("Part", workspace)
+            CurrentVoidPlate.Name = "Galaxy_Void"
+            CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048)
+            CurrentVoidPlate.Anchored = true
+            CurrentVoidPlate.Transparency = 0.65
+            CurrentVoidPlate.Color = Color3.fromRGB(255, 255, 255)
+            CurrentVoidPlate.Material = Enum.Material.SmoothPlastic
         end
         CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -503, LP.Character.HumanoidRootPart.Position.Z)
         LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
@@ -548,6 +556,11 @@ renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
         local myHRP = myChar.HumanoidRootPart
         local hum = myChar:FindFirstChildOfClass("Humanoid")
 
+        -- Tấm sàn trắng dạng kính di chuyển theo chân nhân vật ở độ cao Y = -503
+        if _G.VoidActive and CurrentVoidPlate then
+            CurrentVoidPlate.Position = Vector3.new(myHRP.Position.X, -503, myHRP.Position.Z)
+        end
+
         if _G.Speed > 16 then
             if hum then hum.WalkSpeed = 16 end
             local moveDirection = GetDirection()
@@ -642,7 +655,13 @@ task.spawn(function()
     if Config.VoidActive and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
         LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
         if not CurrentVoidPlate then
-            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
+            CurrentVoidPlate = Instance.new("Part", workspace)
+            CurrentVoidPlate.Name = "Galaxy_Void"
+            CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048)
+            CurrentVoidPlate.Anchored = true
+            CurrentVoidPlate.Transparency = 0.65
+            CurrentVoidPlate.Color = Color3.fromRGB(255, 255, 255)
+            CurrentVoidPlate.Material = Enum.Material.SmoothPlastic
         end
         CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -503, LP.Character.HumanoidRootPart.Position.Z)
         LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
