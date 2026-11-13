@@ -407,7 +407,7 @@ VoidBtnInMenu.MouseButton1Click:Connect(function()
     if Config.VoidActive and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
         LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
         if not CurrentVoidPlate then
-            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(99999999999999999999999999999999999999999999999999, 1, 99999999999999999999999999999999999999999999999999); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
+            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(0, 1, 0); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
         end
         CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -503, LP.Character.HumanoidRootPart.Position.Z)
         LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
@@ -642,7 +642,7 @@ task.spawn(function()
     if Config.VoidActive and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
         LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
         if not CurrentVoidPlate then
-            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(99999999999999999999999999999999999999999999999999, 1, 99999999999999999999999999999999999999999999999999); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
+            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(0, 1, 0); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
         end
         CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -503, LP.Character.HumanoidRootPart.Position.Z)
         LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
