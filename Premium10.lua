@@ -1,4 +1,3 @@
-
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 local RS = game:GetService("RunService")
@@ -111,16 +110,6 @@ local function GiveNoclip()
     Tool.ToolTip = "Cầm trên tay để đi xuyên tường"
     Tool.Parent = LP:WaitForChild("Backpack")
 end
-
-local steppedConnection = RS.Stepped:Connect(function()
-    if _G.Active and LP.Character then
-        if LP.Character:FindFirstChild("Noclip") then
-            for _, part in pairs(LP.Character:GetDescendants()) do
-                if part:IsA("BasePart") then part.CanCollide = false end
-            end
-        end
-    end
-end)
 
 local charAddedConnection = LP.CharacterAdded:Connect(function()
     task.wait(0.5)
@@ -408,7 +397,6 @@ VoidBtnInMenu.MouseButton1Click:Connect(function()
     if Config.VoidActive and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
         LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
         if not CurrentVoidPlate then
-            -- Tấm sàn kính mờ màu trắng sang trọng, kích thước siêu lớn (2048x1x2048) để đỡ nhân vật
             CurrentVoidPlate = Instance.new("Part", workspace)
             CurrentVoidPlate.Name = "Galaxy_Void"
             CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048)
@@ -417,7 +405,7 @@ VoidBtnInMenu.MouseButton1Click:Connect(function()
             CurrentVoidPlate.Color = Color3.fromRGB(255, 255, 255)
             CurrentVoidPlate.Material = Enum.Material.SmoothPlastic
         end
-        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -503, LP.Character.HumanoidRootPart.Position.Z)
+        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -505, LP.Character.HumanoidRootPart.Position.Z)
         LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
     elseif not Config.VoidActive and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then 
         LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0)
@@ -455,7 +443,7 @@ local function GetNearestPlayer()
     return nearest
 end
 
-local renderSteppedConnection = nil
+local steppedConnection = nil
 local heartbeatConnection = nil
 
 Close.MouseButton1Click:Connect(function()
@@ -477,9 +465,8 @@ Close.MouseButton1Click:Connect(function()
     Config.VoidActive = false
     SaveConfig()
 
-    if renderSteppedConnection then renderSteppedConnection:Disconnect() end
-    if heartbeatConnection then heartbeatConnection:Disconnect() end
     if steppedConnection then steppedConnection:Disconnect() end
+    if heartbeatConnection then heartbeatConnection:Disconnect() end
     if charAddedConnection then charAddedConnection:Disconnect() end
 
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
@@ -548,7 +535,7 @@ local function GetDirection()
     return Vector3.zero
 end
 
-renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
+steppedConnection = RS.Stepped:Connect(function(time, deltaTime)
     if not _G.Active or not introFinished then return end
     pcall(function()
         local myChar = LP.Character
@@ -556,9 +543,14 @@ renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
         local myHRP = myChar.HumanoidRootPart
         local hum = myChar:FindFirstChildOfClass("Humanoid")
 
-        -- Tấm sàn trắng dạng kính di chuyển theo chân nhân vật ở độ cao Y = -503
+        if LP.Character:FindFirstChild("Noclip") then
+            for _, part in pairs(LP.Character:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+        end
+
         if _G.VoidActive and CurrentVoidPlate then
-            CurrentVoidPlate.Position = Vector3.new(myHRP.Position.X, -503, myHRP.Position.Z)
+            CurrentVoidPlate.Position = Vector3.new(myHRP.Position.X, -505, myHRP.Position.Z)
         end
 
         if _G.Speed > 16 then
@@ -575,6 +567,8 @@ renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
             if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                 local targetHRP = t.Character.HumanoidRootPart
                 myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 3)
+                myHRP.AssemblyLinearVelocity = targetHRP.AssemblyLinearVelocity
+                myHRP.AssemblyAngularVelocity = targetHRP.AssemblyAngularVelocity
             end
         end
 
@@ -583,6 +577,8 @@ renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
             if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                 local targetHRP = t.Character.HumanoidRootPart
                 myHRP.CFrame = targetHRP.CFrame * CFrame.new(0, 0, 3)
+                myHRP.AssemblyLinearVelocity = targetHRP.AssemblyLinearVelocity
+                myHRP.AssemblyAngularVelocity = targetHRP.AssemblyAngularVelocity
             end
         end
 
@@ -590,6 +586,7 @@ renderSteppedConnection = RS.RenderStepped:Connect(function(deltaTime)
             local t = GetPlayerSmart(_G.TargetName)
             if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
                 t.Character.HumanoidRootPart.CFrame = myHRP.CFrame * CFrame.new(0, 0, -3)
+                t.Character.HumanoidRootPart.AssemblyLinearVelocity = myHRP.AssemblyLinearVelocity
             end
         end
     end)
@@ -643,7 +640,6 @@ task.spawn(function()
     Main.Visible = true
     ToggleBtn.Visible = true
 
-    -- Áp dụng trạng thái Config đã lưu sau khi Intro kết thúc
     _G.Aim = Config.Aim
     _G.Fly = Config.Fly
     _G.ESP = Config.ESP
@@ -663,7 +659,7 @@ task.spawn(function()
             CurrentVoidPlate.Color = Color3.fromRGB(255, 255, 255)
             CurrentVoidPlate.Material = Enum.Material.SmoothPlastic
         end
-        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -503, LP.Character.HumanoidRootPart.Position.Z)
+        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -505, LP.Character.HumanoidRootPart.Position.Z)
         LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
     end
 end)
